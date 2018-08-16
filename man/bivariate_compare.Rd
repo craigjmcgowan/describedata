@@ -11,7 +11,7 @@ bivariate_compare(df, compare, normal_vars = NULL,
 \arguments{
 \item{df}{A data.frame or tibble.}
 
-\item{compare}{Discrete variable. Separate statistics will be produced for 
+\item{compare}{Discrete variable. Separate statistics will be produced for
 each level, with statistical tests across levels.}
 
 \item{normal_vars}{Normally distributed continuous variables that will be
@@ -20,32 +20,32 @@ included in the descriptive table.}
 \item{non_normal_vars}{Non-normally distributed continuous variables that
 will be included in the descriptive table.}
 
-\item{cat_vars}{Categorical variables that will be included in the 
+\item{cat_vars}{Categorical variables that will be included in the
 descriptive table.}
 
 \item{fisher}{Logical. Should Fisher's exact test be used for categorical
 variables? Default \code{FALSE}.}
 
-\item{workspace}{Numeric variable indicating the workspace to be used for 
-Fisher's exact test. If \code{NULL}, the default, the default value of 
+\item{workspace}{Numeric variable indicating the workspace to be used for
+Fisher's exact test. If \code{NULL}, the default, the default value of
 \code{2e5} is used.}
 
 \item{var_label_df}{A data.frame or tibble with columns "variable" and
 "label" that contains display labels for each variable specified in
 \code{normal_vars}, \code{non_normal_vars}, and \code{cat_vars}.}
 
-\item{include_na}{Logical. Should \code{NA} values be included in the 
+\item{include_na}{Logical. Should \code{NA} values be included in the
 table and accompanying statistical tests? Default \code{FALSE}.}
 }
 \value{
 A data.frame with columns label, overall, a column for each level
-  of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is 
+  of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is
   displayed, for \code{non_normal_vars} median (IQR) is displayed, and for
   \code{cat_vars} n (%) is displayed.
 }
 \description{
 Descriptive statistics for categorical variables as well as normally and
-non-normally distributed continiuous variables, split across levels of 
+non-normally distributed continiuous variables, split across levels of
 a categorical variable. Depending on the variable type, an appropriate
 statistical test is used to assess differences across levels of the
 comparison variable.
