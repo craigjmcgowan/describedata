@@ -11,41 +11,41 @@ proc_means(df, vars = NULL, by = NULL, n = T, mean = TRUE,
 \arguments{
 \item{df}{A data frame or tibble.}
 
-\item{vars}{A character vector of numeric variables to generate descriptive 
+\item{vars}{A character vector of numeric variables to generate descriptive
 statistics for. If the default (\code{NULL}), all variables are included,
 except for any specified in \code{by}.}
 
-\item{by}{Discrete variable. Separate statistics will be produced for 
+\item{by}{Discrete variable. Separate statistics will be produced for
 each level. Default \code{NULL} provides statistics for all observations.}
 
-\item{n}{Display number of rows with values. Default \code{TRUE}.}
+\item{n}{logical. Display number of rows with values. Default \code{TRUE}.}
 
-\item{mean}{Display mean value. Default \code{TRUE}.}
+\item{mean}{logical. Display mean value. Default \code{TRUE}.}
 
-\item{sd}{Display standard deviation. Default \code{TRUE}.}
+\item{sd}{logical. Display standard deviation. Default \code{TRUE}.}
 
-\item{min}{Display minimum value. Default \code{TRUE}.}
+\item{min}{logical. Display minimum value. Default \code{TRUE}.}
 
-\item{max}{Display maximum value. Default \code{TRUE}.}
+\item{max}{logical. Display maximum value. Default \code{TRUE}.}
 
-\item{median}{Display median value. Default \code{FALSE}.}
+\item{median}{logical. Display median value. Default \code{FALSE}.}
 
-\item{q1}{Display first quartile value. Default \code{FALSE}.}
+\item{q1}{logical. Display first quartile value. Default \code{FALSE}.}
 
-\item{q3}{Display third quartile value. Default \code{FALSE}.}
+\item{q3}{logical. Display third quartile value. Default \code{FALSE}.}
 
-\item{iqr}{Display interquartile range. Default \code{FALSE}.}
+\item{iqr}{logical. Display interquartile range. Default \code{FALSE}.}
 
-\item{nmiss}{Display number of missing values. Default \code{FALSE}.}
+\item{nmiss}{logical. Display number of missing values. Default \code{FALSE}.}
 
-\item{nobs}{Display total number of rows. Default \code{FALSE}.}
+\item{nobs}{logical. Display total number of rows. Default \code{FALSE}.}
 }
 \value{
-A data.frame with columns variable, \code{by} variable, and 
+A data.frame with columns variable, \code{by} variable, and
   a column for each summary statistic.
 }
 \description{
-Descriptive statistics for continuous variables, with the option of 
+Descriptive statistics for continuous variables, with the option of
 stratifying by a categorical variable.
 }
 \examples{

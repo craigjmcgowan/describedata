@@ -41,7 +41,7 @@ table and accompanying statistical tests? Default \code{FALSE}.}
 A data.frame with columns label, overall, a column for each level
   of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is
   displayed, for \code{non_normal_vars} median (IQR) is displayed, and for
-  \code{cat_vars} n (%) is displayed.
+  \code{cat_vars} n (percent) is displayed.
 }
 \description{
 Descriptive statistics for categorical variables as well as normally and
