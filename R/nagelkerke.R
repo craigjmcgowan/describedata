@@ -6,7 +6,6 @@
 #'   The model must have been fit using the \code{data} option, in order to
 #'   extract the data from the model object.
 #'
-#' @import lmtest
 #' @export
 #' @return Numeric value of Nagelkerke r-squared for the model
 #'
