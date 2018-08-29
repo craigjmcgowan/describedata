@@ -20,8 +20,11 @@
 #' @param iqr logical. Display interquartile range. Default \code{FALSE}.
 #' @param nmiss logical. Display number of missing values. Default \code{FALSE}.
 #' @param nobs logical. Display total number of rows. Default \code{FALSE}.
+#' @param p logical. Calculate p-value across \code{by} groups. Ignored if
+#'   no \code{by} variable specified. Default \code{FALSE}.
 #'
 #' @import dplyr
+#' @import tidyr
 #' @import haven
 #' @import purrr
 #' @export
@@ -36,7 +39,9 @@
 proc_means <- function(df, vars = NULL, by = NULL, n = T, mean = TRUE,
                        sd = TRUE, min = TRUE, max = TRUE, median = FALSE,
                        q1 = FALSE, q3 = FALSE, iqr = FALSE, nmiss = FALSE,
-                       nobs = FALSE) {
+                       nobs = FALSE, p = FALSE) {
+
+  if(is.null(by)) p <- FALSE
 
   # Create quosure of by variable if provided
   if (!is.null(by)) quo_by <- rlang::sym(by)
@@ -56,13 +61,26 @@ proc_means <- function(df, vars = NULL, by = NULL, n = T, mean = TRUE,
     attr(data[[deparse(as.name(var))]], "label") <- NULL
   }
 
-  # Calculate summary statistics and return requested stats
-  data %>%
+  # Gather variables together
+  data <- data %>%
     when(!is.null(by) ~ gather(., key = "variable", value = "value", -!!quo_by) %>%
            group_by(variable, !!quo_by),
          ~ gather(., key = "variable", value = "value") %>%
            group_by(variable)
-         ) %>%
+         )
+
+  # Calculate p-values
+  if(isTRUE(p)) {
+    p_values <- data %>%
+      group_by(variable) %>%
+      do(broom::tidy(aov(value ~ !!quo_by, data = .))) %>%
+      filter(!is.na(p.value)) %>%
+      mutate(p.value = ifelse(p.value < 0.001, "< 0.001", paste(round(p.value, 3)))) %>%
+      select(variable, p.value)
+  }
+
+  # Calculate summary statistics and return requested stats
+  data %>%
     # Calculate all summary statistics
     summarize(N = sum(!is.na(value)),
               Mean = round(mean(value, na.rm = TRUE), 3),
@@ -97,8 +115,9 @@ proc_means <- function(df, vars = NULL, by = NULL, n = T, mean = TRUE,
     when(!isTRUE(nmiss) ~ select(., -NMiss),
          ~ select(., everything())) %>%
     when(!isTRUE(nobs) ~ select(., -NObs),
+         ~ select(., everything())) %>%
+    when(isTRUE(p) ~ left_join(., p_values, by = "variable") %>%
+           mutate(p.value = ifelse(row_number() == 1, p.value, "")),
          ~ select(., everything()))
 
 }
-
-

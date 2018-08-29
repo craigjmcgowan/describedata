@@ -6,7 +6,8 @@
 \usage{
 proc_means(df, vars = NULL, by = NULL, n = T, mean = TRUE,
   sd = TRUE, min = TRUE, max = TRUE, median = FALSE, q1 = FALSE,
-  q3 = FALSE, iqr = FALSE, nmiss = FALSE, nobs = FALSE)
+  q3 = FALSE, iqr = FALSE, nmiss = FALSE, nobs = FALSE,
+  p = FALSE)
 }
 \arguments{
 \item{df}{A data frame or tibble.}
@@ -39,6 +40,9 @@ each level. Default \code{NULL} provides statistics for all observations.}
 \item{nmiss}{logical. Display number of missing values. Default \code{FALSE}.}
 
 \item{nobs}{logical. Display total number of rows. Default \code{FALSE}.}
+
+\item{p}{logical. Calculate p-value across \code{by} groups. Ignored if
+no \code{by} variable specified. Default \code{FALSE}.}
 }
 \value{
 A data.frame with columns variable, \code{by} variable, and

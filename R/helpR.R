@@ -8,7 +8,7 @@
 #' The helper functions \code{\link{bivariate_compare}} and
 #'   \code{\link{univar_freq}} create frequency tables. \code{\link{univar_freq}}
 #'   produces simple n and percent for categories of a single variable,
-#'   while \code{\link{bivarate_compare}} compares continuous or categorical
+#'   while \code{\link{bivariate_compare}} compares continuous or categorical
 #'   variables across categories of a comparison variable. This is particularly
 #'   useful for generating a Table 1 or 2 for a publication manuscript.
 #'
