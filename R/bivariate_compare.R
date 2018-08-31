@@ -31,20 +31,24 @@
 #' @param workspace Numeric variable indicating the workspace to be used for
 #'   Fisher's exact test. If \code{NULL}, the default, the default value of
 #'   \code{2e5} is used. Ignored if \code{fisher == FALSE}.
+#' @param var_order Character vector listing the variable names in the order
+#'   results should be displayed. If \code{NULL}, the default, continuous
+#'   variables are displayed first, followed by categorical variables.
 #' @param var_label_df A data.frame or tibble with columns "variable" and
 #'   "label" that contains display labels for each variable specified in
 #'   \code{normal_vars}, \code{non_normal_vars}, and \code{cat_vars}.
 #'
 #' @import dplyr
 #' @import stringr
+#' @import tidyr
 #' @import purrr
 #' @import broom
 #' @export
 #' @return A data.frame with columns label, overall, a column for each level
 #'   of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is
 #'   displayed, for \code{non_normal_vars} median (IQR) is displayed, and for
-#'   \code{cat_vars} n (percent) is displayed. For p values, superscript 'a'
-#'   denotes Kruskal-Wallis test was used
+#'   \code{cat_vars} n (percent) is displayed. For p values on continous
+#'   variables, a superscript 'a' denotes the Kruskal-Wallis test was used
 #'
 #' @examples
 #' bivariate_compare(iris, compare = "Species", normal_vars = c("Sepal.Length", "Sepal.Width"))
@@ -57,6 +61,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                               include_na = FALSE,
                               fisher = FALSE,
                               workspace = NULL,
+                              var_order = NULL,
                               var_label_df = NULL) {
 
   quo_compare <- rlang::sym(compare)
@@ -83,9 +88,6 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
              mutate_at(., vars(one_of(cat_vars)), fct_explicit_na),
            ~ select(., everything()))
   }
-
-  # Store categorical levels for later
-  if(!is.null(cat_vars)) lev <- map(df %>% select(one_of(cat_vars)), levels)
 
   # Calculate p values
   if(isTRUE(p)) {
@@ -220,12 +222,28 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     left_join(p_values, by = "variable")
 
   # Order for displaying results
-  var_order <- c(non_normal_vars, normal_vars, cat_vars)
-  if (!is.null(cat_vars)) {
-    value_order <- c(rep(NA, length(non_normal_vars) + length(normal_vars)),
-                     unname(unlist(lev)))
-  } else {
-    value_order <- c(rep(NA, length(non_normal_vars) + length(normal_vars)))
+  if(is.null(var_order)) var_order <- c(non_normal_vars, normal_vars, cat_vars)
+
+  if(length(var_order) != length(c(non_normal_vars, normal_vars, cat_vars))) {
+    stop(paste(length(var_order), "variables in var_order, but stats calculated for",
+               length(c(non_normal_vars, normal_vars, cat_vars)),
+               "variables.\nCheck var_order that all variables included."))
+  }
+  if(!all(var_order %in% c(non_normal_vars, normal_vars, cat_vars))) {
+    stop(paste("The following variables in var_order need to be included in one of",
+               "normal_vars, non_normal_vars, or cat_vars:\n",
+               paste(var_order[!var_order %in% c(non_normal_vars, normal_vars, cat_vars)],
+                     collapse = ",")))
+  }
+
+  value_order <- character()
+  for (i in 1:length(var_order)) {
+    if(var_order[i] %in% cat_vars) {
+      value_order <- c(value_order, select(df, matches(var_order[i])) %>%
+                         pull(1) %>% levels())
+    } else {
+      value_order <- c(value_order, NA_character_)
+    }
   }
 
   # Display results

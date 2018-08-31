@@ -7,7 +7,7 @@
 bivariate_compare(df, compare, normal_vars = NULL,
   non_normal_vars = NULL, cat_vars = NULL, p = TRUE,
   include_na = FALSE, fisher = FALSE, workspace = NULL,
-  var_label_df = NULL)
+  var_order = NULL, var_label_df = NULL)
 }
 \arguments{
 \item{df}{A data.frame or tibble.}
@@ -37,6 +37,10 @@ variables? Default \code{FALSE}. Ignored if \code{p == FALSE}.}
 Fisher's exact test. If \code{NULL}, the default, the default value of
 \code{2e5} is used. Ignored if \code{fisher == FALSE}.}
 
+\item{var_order}{Character vector listing the variable names in the order
+results should be displayed. If \code{NULL}, the default, continuous
+variables are displayed first, followed by categorical variables.}
+
 \item{var_label_df}{A data.frame or tibble with columns "variable" and
 "label" that contains display labels for each variable specified in
 \code{normal_vars}, \code{non_normal_vars}, and \code{cat_vars}.}
@@ -45,8 +49,8 @@ Fisher's exact test. If \code{NULL}, the default, the default value of
 A data.frame with columns label, overall, a column for each level
   of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is
   displayed, for \code{non_normal_vars} median (IQR) is displayed, and for
-  \code{cat_vars} n (percent) is displayed. For p values, superscript 'a'
-  denotes Kruskal-Wallis test was used
+  \code{cat_vars} n (percent) is displayed. For p values on continous
+  variables, a superscript 'a' denotes the Kruskal-Wallis test was used
 }
 \description{
 Descriptive statistics for categorical variables as well as normally and
