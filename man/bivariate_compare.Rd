@@ -5,43 +5,48 @@
 \title{Create publication-style table across one categorical variable}
 \usage{
 bivariate_compare(df, compare, normal_vars = NULL,
-  non_normal_vars = NULL, cat_vars = NULL, fisher = FALSE,
-  workspace = NULL, var_label_df = NULL, include_na = FALSE)
+  non_normal_vars = NULL, cat_vars = NULL, p = TRUE,
+  include_na = FALSE, fisher = FALSE, workspace = NULL,
+  var_label_df = NULL)
 }
 \arguments{
 \item{df}{A data.frame or tibble.}
 
 \item{compare}{Discrete variable. Separate statistics will be produced for
-each level, with statistical tests across levels.}
+each level, with statistical tests across levels. Must be quoted.}
 
-\item{normal_vars}{Normally distributed continuous variables that will be
+\item{normal_vars}{Character vector of normally distributed continuous
+variables that will be included in the descriptive table.}
+
+\item{non_normal_vars}{Character vector of non-normally distributed continuous
+variables that will be included in the descriptive table.}
+
+\item{cat_vars}{Character vector of categorical variables that will be
 included in the descriptive table.}
 
-\item{non_normal_vars}{Non-normally distributed continuous variables that
-will be included in the descriptive table.}
+\item{p}{Logical. Should p-values be calculated and displayed?
+Default \code{TRUE}.}
 
-\item{cat_vars}{Categorical variables that will be included in the
-descriptive table.}
+\item{include_na}{Logical. Should \code{NA} values be included in the
+table and accompanying statistical tests? Default \code{FALSE}.}
 
 \item{fisher}{Logical. Should Fisher's exact test be used for categorical
-variables? Default \code{FALSE}.}
+variables? Default \code{FALSE}. Ignored if \code{p == FALSE}.}
 
 \item{workspace}{Numeric variable indicating the workspace to be used for
 Fisher's exact test. If \code{NULL}, the default, the default value of
-\code{2e5} is used.}
+\code{2e5} is used. Ignored if \code{fisher == FALSE}.}
 
 \item{var_label_df}{A data.frame or tibble with columns "variable" and
 "label" that contains display labels for each variable specified in
 \code{normal_vars}, \code{non_normal_vars}, and \code{cat_vars}.}
-
-\item{include_na}{Logical. Should \code{NA} values be included in the
-table and accompanying statistical tests? Default \code{FALSE}.}
 }
 \value{
 A data.frame with columns label, overall, a column for each level
   of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is
   displayed, for \code{non_normal_vars} median (IQR) is displayed, and for
-  \code{cat_vars} n (percent) is displayed.
+  \code{cat_vars} n (percent) is displayed. For p values, superscript 'a'
+  denotes Kruskal-Wallis test was used
 }
 \description{
 Descriptive statistics for categorical variables as well as normally and
@@ -50,8 +55,15 @@ a categorical variable. Depending on the variable type, an appropriate
 statistical test is used to assess differences across levels of the
 comparison variable.
 }
+\details{
+Statistical differences between normally distributed continuous variables
+are assessed using \code{aov()}, differences in non-normally distributed
+variables are assessed using \code{kruskal.test()}, and differences in
+categorical variables are assessed using \code{chisq.test()} by default,
+with a user option for \code{fisher.test()} instead.
+}
 \examples{
-bivariate_compare(iris, compare = Species, normal_vars = c("Sepal.Length", "Sepal.Width"))
+bivariate_compare(iris, compare = "Species", normal_vars = c("Sepal.Length", "Sepal.Width"))
 
-bivariate_compare(mtcars, compare = cyl, non_normal_vars = "mpg")
+bivariate_compare(mtcars, compare = "cyl", non_normal_vars = "mpg")
 }

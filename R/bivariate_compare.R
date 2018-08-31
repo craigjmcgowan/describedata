@@ -6,22 +6,31 @@
 #' statistical test is used to assess differences across levels of the
 #' comparison variable.
 #'
+#' Statistical differences between normally distributed continuous variables
+#' are assessed using \code{aov()}, differences in non-normally distributed
+#' variables are assessed using \code{kruskal.test()}, and differences in
+#' categorical variables are assessed using \code{chisq.test()} by default,
+#' with a user option for \code{fisher.test()} instead.
+#'
+#'
 #' @param df A data.frame or tibble.
 #' @param compare Discrete variable. Separate statistics will be produced for
-#'   each level, with statistical tests across levels.
-#' @param normal_vars Normally distributed continuous variables that will be
+#'   each level, with statistical tests across levels. Must be quoted.
+#' @param normal_vars Character vector of normally distributed continuous
+#'   variables that will be included in the descriptive table.
+#' @param non_normal_vars Character vector of non-normally distributed continuous
+#'   variables that will be included in the descriptive table.
+#' @param cat_vars Character vector of categorical variables that will be
 #'   included in the descriptive table.
-#' @param non_normal_vars Non-normally distributed continuous variables that
-#'   will be included in the descriptive table.
-#' @param cat_vars Categorical variables that will be included in the
-#'   descriptive table.
+#' @param p Logical. Should p-values be calculated and displayed?
+#'   Default \code{TRUE}.
 #' @param include_na Logical. Should \code{NA} values be included in the
 #'   table and accompanying statistical tests? Default \code{FALSE}.
 #' @param fisher Logical. Should Fisher's exact test be used for categorical
-#'   variables? Default \code{FALSE}.
+#'   variables? Default \code{FALSE}. Ignored if \code{p == FALSE}.
 #' @param workspace Numeric variable indicating the workspace to be used for
 #'   Fisher's exact test. If \code{NULL}, the default, the default value of
-#'   \code{2e5} is used.
+#'   \code{2e5} is used. Ignored if \code{fisher == FALSE}.
 #' @param var_label_df A data.frame or tibble with columns "variable" and
 #'   "label" that contains display labels for each variable specified in
 #'   \code{normal_vars}, \code{non_normal_vars}, and \code{cat_vars}.
@@ -34,19 +43,21 @@
 #' @return A data.frame with columns label, overall, a column for each level
 #'   of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is
 #'   displayed, for \code{non_normal_vars} median (IQR) is displayed, and for
-#'   \code{cat_vars} n (percent) is displayed.
+#'   \code{cat_vars} n (percent) is displayed. For p values, superscript 'a'
+#'   denotes Kruskal-Wallis test was used
 #'
 #' @examples
-#' bivariate_compare(iris, compare = Species, normal_vars = c("Sepal.Length", "Sepal.Width"))
+#' bivariate_compare(iris, compare = "Species", normal_vars = c("Sepal.Length", "Sepal.Width"))
 #'
-#' bivariate_compare(mtcars, compare = cyl, non_normal_vars = "mpg")
+#' bivariate_compare(mtcars, compare = "cyl", non_normal_vars = "mpg")
 
 bivariate_compare <- function(df, compare, normal_vars = NULL,
                               non_normal_vars = NULL,
-                              cat_vars = NULL, fisher = FALSE,
+                              cat_vars = NULL, p = TRUE,
+                              include_na = FALSE,
+                              fisher = FALSE,
                               workspace = NULL,
-                              var_label_df = NULL,
-                              include_na = FALSE) {
+                              var_label_df = NULL) {
 
   quo_compare <- rlang::sym(compare)
 
@@ -77,65 +88,70 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
   if(!is.null(cat_vars)) lev <- map(df %>% select(one_of(cat_vars)), levels)
 
   # Calculate p values
-  p_values <- tibble() %>%
-    # Categorical variables
-    when(!is.null(cat_vars) ~ bind_rows(.,
-      df %>%
-        # Remove missing outcomes for p-value calcs
-        filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
-        mutate_at(vars(one_of(cat_vars)), as.character) %>%
-        select(one_of(cat_vars), temp_out) %>%
-        gather(key = "variable", value = "value", -temp_out) %>%
-        # Remove missing values for p-value calcs
-        filter(value != "(Missing)", !is.na(value)) %>%
-        group_by(variable) %>%
-        when(
-          !isTRUE(fisher) ~ do(., tidy(chisq.test(.$temp_out, .$value))),
-          isTRUE(fisher) & is.null(workspace) ~
-            do(., tidy(fisher.test(.$temp_out, .$value))),
-          ~ do(., tidy(fisher.test(.$temp_out, .$value, workspace = workspace)))
-        ) %>%
-        ungroup() %>%
-        mutate_all(as.character)),
-      ~ bind_rows(., tibble())) %>%
-    # Non-normal continuous variables
-    when(!is.null(non_normal_vars) ~ bind_rows(.,
-      df %>%
-        # Remove missing outcomes for p-value calcs
-        filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
-        select(temp_out, one_of(non_normal_vars)) %>%
-        gather(key = "variable", value = "value", -temp_out) %>%
-        # Remove missing values for p-value calcs
-        filter(!is.na(value)) %>%
-        group_by(variable) %>%
-        do(tidy(kruskal.test(value ~ temp_out,
-                             data = .))) %>%
-        ungroup() %>%
-        mutate_all(as.character)),
-      ~ bind_rows(., tibble())) %>%
-    # Normal continuous variables
-    when(!is.null(normal_vars) ~ bind_rows(.,
-      df %>%
-        # Remove missing outcomes for p-value calcs
-        filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
-        select(temp_out, one_of(normal_vars)) %>%
-        gather(key = "variable", value = "value", -temp_out) %>%
-        # Remove missing values for p-value calcs
-        filter(!is.na(value)) %>%
-        group_by(variable) %>%
-        do(tidy(lm(value ~ temp_out, data = .)) %>%
-             filter(grepl("temp_out", term))) %>%
-        ungroup() %>%
-        mutate_all(as.character)),
-      ~ bind_rows(., tibble())) %>%
-    select(variable, p.value) %>%
-    mutate(p.value = case_when(as.numeric(p.value) < 1e-4 ~ "< 0.0001",
-                               as.numeric(p.value) >= 1e-4 ~
-                                 format(round(as.numeric(p.value), 4), nsmall = 4),
-                               TRUE ~ NA_character_),
-           p.value = case_when(variable %in% non_normal_vars ~
-                                 paste0(p.value, "^a^"),
-                               TRUE ~ p.value))
+  if(isTRUE(p)) {
+    p_values <- tibble() %>%
+      # Categorical variables
+      when(!is.null(cat_vars) ~ bind_rows(.,
+        df %>%
+          # Remove missing outcomes for p-value calcs
+          filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
+          mutate_at(vars(one_of(cat_vars)), as.character) %>%
+          select(one_of(cat_vars), temp_out) %>%
+          gather(key = "variable", value = "value", -temp_out) %>%
+          # Remove missing values for p-value calcs
+          filter(value != "(Missing)", !is.na(value)) %>%
+          group_by(variable) %>%
+          when(
+            !isTRUE(fisher) ~ do(., tidy(chisq.test(.$temp_out, .$value))),
+            isTRUE(fisher) & is.null(workspace) ~
+              do(., tidy(fisher.test(.$temp_out, .$value))),
+            ~ do(., tidy(fisher.test(.$temp_out, .$value, workspace = workspace)))
+          ) %>%
+          ungroup() %>%
+          mutate_all(as.character)),
+        ~ bind_rows(., tibble())) %>%
+      # Non-normal continuous variables
+      when(!is.null(non_normal_vars) ~ bind_rows(.,
+        df %>%
+          # Remove missing outcomes for p-value calcs
+          filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
+          select(temp_out, one_of(non_normal_vars)) %>%
+          gather(key = "variable", value = "value", -temp_out) %>%
+          # Remove missing values for p-value calcs
+          filter(!is.na(value)) %>%
+          group_by(variable) %>%
+          do(tidy(kruskal.test(value ~ temp_out,
+                               data = .))) %>%
+          ungroup() %>%
+          mutate_all(as.character)),
+        ~ bind_rows(., tibble())) %>%
+      # Normal continuous variables
+      when(!is.null(normal_vars) ~ bind_rows(.,
+        df %>%
+          # Remove missing outcomes for p-value calcs
+          filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
+          select(temp_out, one_of(normal_vars)) %>%
+          gather(key = "variable", value = "value", -temp_out) %>%
+          # Remove missing values for p-value calcs
+          filter(!is.na(value)) %>%
+          group_by(variable) %>%
+          do(tidy(aov(value ~ temp_out, data = .)) %>%
+               filter(grepl("temp_out", term))) %>%
+          ungroup() %>%
+          mutate_all(as.character)),
+        ~ bind_rows(., tibble())) %>%
+      select(variable, p.value) %>%
+      mutate(p.value = case_when(as.numeric(p.value) < 1e-4 ~ "< 0.0001",
+                                 as.numeric(p.value) >= 1e-4 ~
+                                   format(round(as.numeric(p.value), 4), nsmall = 4),
+                                 TRUE ~ NA_character_),
+             p.value = case_when(variable %in% non_normal_vars ~
+                                   paste0(p.value, "^a^"),
+                                 TRUE ~ p.value))
+  } else {
+    p_values <- tibble(variable = c(cat_vars, normal_vars, non_normal_vars),
+                       p.value = rep(" ", length(variable)))
+  }
 
   overall <- tibble() %>%
     # Continuous variable summaries
@@ -224,8 +240,8 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     # Return variable to being character for joining
     mutate(variable = as.character(variable)) %>%
     group_by(variable) %>%
-    mutate(p.value = ifelse(row_number(variable) == 1,
-                            p.value, " ")) %>%
+    mutate(., p.value = ifelse(row_number(variable) == 1,
+                                                p.value, " ")) %>%
     # Add variable labels if provided, otherwise return variable name
     when(!is.null(var_label_df) ~
            left_join(., var_label_df, by = c("variable")) %>%
@@ -242,5 +258,8 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                                     TRUE ~ NA_character_)) %>%
            ungroup() %>%
            select(var, "Overall" = display,
-                  one_of(levels(df$temp_out)), p.value))
+                  one_of(levels(df$temp_out)), p.value)) %>%
+    # Remove p.value if not requested
+    when(isTRUE(p) ~ select(., everything()),
+         ~ select(., -p.value))
 }
