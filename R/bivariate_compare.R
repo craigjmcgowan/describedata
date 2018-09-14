@@ -157,9 +157,25 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
 
   overall <- tibble() %>%
     # Continuous variable summaries
-    when(!is.null(c(normal_vars, non_normal_vars)) ~ bind_rows(.,
+    when(!is.null(normal_vars) ~ bind_rows(.,
+     df %>%
+       select(one_of(c(normal_vars))) %>%
+       gather(key = "variable", value = "value") %>%
+       group_by(variable) %>%
+       summarize(n = n() - sum(is.na(value)),
+                 nmiss = sum(is.na(value)),
+                 mean = mean(value, na.rm = T),
+                 sd = sd(value, na.rm = T)) %>%
+       mutate(n_display = paste0(n, " (", nmiss, ")"),
+              display = paste0(round(mean, 2),
+                               " (", round(sd, 2),
+                               ")"),
+              value = NA_character_) %>%
+       select(variable, value, n_display, display)),
+      ~ bind_rows(., tibble())) %>%
+    when(!is.null(c(non_normal_vars)) ~ bind_rows(.,
       df %>%
-        select(one_of(c(normal_vars, non_normal_vars))) %>%
+        select(one_of(c(non_normal_vars))) %>%
         gather(key = "variable", value = "value") %>%
         group_by(variable) %>%
         summarize(n = n() - sum(is.na(value)),
@@ -190,21 +206,36 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
 
   by_gender <- tibble() %>%
     # Continuous variable summaries
-    when(!is.null(c(normal_vars, non_normal_vars)) ~ bind_rows(.,
+    when(!is.null(c(normal_vars)) ~ bind_rows(.,
       df %>%
         select(temp_out,
-               one_of(c(normal_vars, non_normal_vars))) %>%
+               one_of(c(normal_vars))) %>%
         gather(key = "variable", value = "value", -temp_out) %>%
         group_by(temp_out, variable) %>%
-        summarize(median = median(value, na.rm = T),
-                  iqr = IQR(value, na.rm = T)) %>%
-        mutate(display = paste0(round(median, 2),
-                                " (", round(iqr, 2),
+        summarize(mean = mean(value, na.rm = T),
+                  sd = sd(value, na.rm = T)) %>%
+        mutate(display = paste0(round(mean, 2),
+                                " (", round(sd, 2),
                                 ")"),
                value = NA_character_) %>%
         select(temp_out, variable, value, display) %>%
         spread(key = temp_out, value = "display")),
       ~ bind_rows(., tibble())) %>%
+    when(!is.null(c(non_normal_vars)) ~ bind_rows(.,
+       df %>%
+         select(temp_out,
+                one_of(c(non_normal_vars))) %>%
+         gather(key = "variable", value = "value", -temp_out) %>%
+         group_by(temp_out, variable) %>%
+         summarize(median = median(value, na.rm = T),
+                   iqr = IQR(value, na.rm = T)) %>%
+         mutate(display = paste0(round(median, 2),
+                                 " (", round(iqr, 2),
+                                 ")"),
+                value = NA_character_) %>%
+         select(temp_out, variable, value, display) %>%
+         spread(key = temp_out, value = "display")),
+         ~ bind_rows(., tibble())) %>%
     # Categorical variable summaries
     when(!is.null(cat_vars) ~ bind_rows(.,
       df %>%
