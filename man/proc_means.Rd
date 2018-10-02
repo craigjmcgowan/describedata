@@ -41,8 +41,8 @@ each level. Default \code{NULL} provides statistics for all observations.}
 
 \item{nobs}{logical. Display total number of rows. Default \code{FALSE}.}
 
-\item{p}{logical. Calculate p-value across \code{by} groups. Ignored if
-no \code{by} variable specified. Default \code{FALSE}.}
+\item{p}{logical. Calculate p-value across \code{by} groups using \code{aov}.
+Ignored if no \code{by} variable specified. Default \code{FALSE}.}
 }
 \value{
 A data.frame with columns variable, \code{by} variable, and

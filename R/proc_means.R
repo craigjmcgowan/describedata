@@ -20,8 +20,8 @@
 #' @param iqr logical. Display interquartile range. Default \code{FALSE}.
 #' @param nmiss logical. Display number of missing values. Default \code{FALSE}.
 #' @param nobs logical. Display total number of rows. Default \code{FALSE}.
-#' @param p logical. Calculate p-value across \code{by} groups. Ignored if
-#'   no \code{by} variable specified. Default \code{FALSE}.
+#' @param p logical. Calculate p-value across \code{by} groups using \code{aov}.
+#'   Ignored if no \code{by} variable specified. Default \code{FALSE}.
 #'
 #' @import dplyr
 #' @import tidyr

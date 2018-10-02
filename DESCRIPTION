@@ -4,18 +4,22 @@ Title: Miscellaneous helper and SAS/Stata duplicate functions
 Version: 0.1.0
 Authors@R: person("Craig", "McGowan", email = "mcgowan.cj@gmail.com",
   role = c("aut", "cre"))
-Description: 
+Description:
   Helper functions for tasks such as making print-friendly bivariate 
   tables, sample size flow counts, and more. Also contains R approximations
   of some common, useful SAS/Stata functions.
-Imports: 
+Imports:
   dplyr (>= 0.7),
   tidyr,
   purrr,
   broom,
   stringr,
-  haven
+  haven,
+  ggplot2,
+  lmtest,
+  rlang
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.0
+Suggests: testthat
