@@ -278,7 +278,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
   }
 
   # Display results
-  overall %>%
+  display <- overall %>%
     left_join(by_gender, by = c("variable", "value")) %>%
     mutate(value = ifelse(is.na(value) & variable %in% cat_vars,
                           "(Missing)", value),
@@ -311,4 +311,17 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     # Remove p.value if not requested
     when(isTRUE(p) ~ select(., everything()),
          ~ select(., -p.value))
+
+
+  # Add total N to column headers
+  n <- df %>%
+    group_by(temp_out) %>%
+    summarize(n = n()) %>%
+    arrange(temp_out)
+
+  display <- display %>%
+    rename_at("Overall", function(x) paste0(x, " (n = ", sum(n$n), ")")) %>%
+    rename_at(levels(df$temp_out), function(x) paste0(x, " (n = ", n$n, ")"))
+
+  return(display)
 }
