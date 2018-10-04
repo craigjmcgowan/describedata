@@ -27,10 +27,15 @@
 #' @examples
 #' norm_dist_plot(df = iris, var = "Sepal.Width")
 #'
-#' You can include multiple variables by combining into a long format as follows:
+#' # You can include multiple variables by combining into a
+#' #   long format as follows:
 #'
-#' iris_long <- gather(iris, key = "facet_var", value = "plot_var", Sepal.Width, Sepal.Length)
-#' norm_dist_plot(df = iris_long, var = "plot_var", facet = "facet_var")
+#' iris_long <- tidyr::gather(iris, key = "facet_var",
+#'                            value = "plot_var",
+#'                            Sepal.Width, Sepal.Length)
+#'
+#' norm_dist_plot(df = iris_long, var = "plot_var",
+#'                facet = "facet_var")
 
 norm_dist_plot <- function(df, var, facet = NULL) {
 
