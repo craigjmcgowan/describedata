@@ -4,17 +4,12 @@
 \alias{norm_dist_plot}
 \title{Create density histogram with normal distribution overlaid}
 \usage{
-norm_dist_plot(df, var, facet = NULL)
+norm_dist_plot(df, vars)
 }
 \arguments{
 \item{df}{A data.frame or tibble.}
 
-\item{var}{Continous variable. Must be quoted.}
-
-\item{facet}{Character vector of measurement names corresponding with values
-in \code{var}. Separate calculations will be performed on each group and
-the resulting plot will be facetted accordingly. Default \code{NULL}
-indicates that all values in \code{var} are for the same measure.}
+\item{var}{A character vector of continous variable names.}
 }
 \value{
 A \code{ggplot} object.
@@ -25,21 +20,9 @@ distribution overlaid. The overlaid normal distribution has the same mean
 and standard deviation as the provided variable, and the plot provides a
 visual means to assess the normality of the variable's distribution.
 }
-\details{
-Multiple variables may be plotted by providing data in a long format with
-all values in the \code{var} variable and the variable labels in the
-\code{facet} variable. See \code{Examples}.
-}
 \examples{
-norm_dist_plot(df = iris, var = "Sepal.Width")
+norm_dist_plot(df = iris, vars = "Sepal.Width")
 
-# You can include multiple variables by combining into a
-#   long format as follows:
-
-iris_long <- tidyr::gather(iris, key = "facet_var",
-                           value = "plot_var",
-                           Sepal.Width, Sepal.Length)
-
-norm_dist_plot(df = iris_long, var = "plot_var",
-               facet = "facet_var")
+norm_dist_plot(df = iris,
+               vars = c("Sepal.Width", "Sepal.Length"))
 }

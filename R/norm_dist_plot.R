@@ -5,17 +5,9 @@
 #' and standard deviation as the provided variable, and the plot provides a
 #' visual means to assess the normality of the variable's distribution.
 #'
-#' Multiple variables may be plotted by providing data in a long format with
-#' all values in the \code{var} variable and the variable labels in the
-#' \code{facet} variable. See \code{Examples}.
-#'
 #'
 #' @param df A data.frame or tibble.
-#' @param var Continous variable. Must be quoted.
-#' @param facet Character vector of measurement names corresponding with values
-#'   in \code{var}. Separate calculations will be performed on each group and
-#'   the resulting plot will be facetted accordingly. Default \code{NULL}
-#'   indicates that all values in \code{var} are for the same measure.
+#' @param var A character vector of continous variable names.
 #'
 #' @import dplyr
 #' @import tidyr
@@ -25,48 +17,41 @@
 #' @return A \code{ggplot} object.
 #'
 #' @examples
-#' norm_dist_plot(df = iris, var = "Sepal.Width")
+#' norm_dist_plot(df = iris, vars = "Sepal.Width")
 #'
-#' # You can include multiple variables by combining into a
-#' #   long format as follows:
-#'
-#' iris_long <- tidyr::gather(iris, key = "facet_var",
-#'                            value = "plot_var",
-#'                            Sepal.Width, Sepal.Length)
-#'
-#' norm_dist_plot(df = iris_long, var = "plot_var",
-#'                facet = "facet_var")
+#' norm_dist_plot(df = iris,
+#'                vars = c("Sepal.Width", "Sepal.Length"))
 
-norm_dist_plot <- function(df, var, facet = NULL) {
+norm_dist_plot <- function(df, vars) {
 
-  quo_var <- rlang::sym(var)
-  if(!is.null(facet)) {
-    quo_facet <- rlang::sym(facet)
-    formula_facet <- as.formula(paste("~ ", facet))
+  # check for valid and multiple variables
+  if(!all(vars %in% names(df)))
+    stop("Not all variables are in the provided data.frame")
+
+  if(length(vars) > 1) {
+    df <- gather(df, key = "facet", value = "value",
+                 vars) %>%
+      select(facet, value)
+  } else {
+    quo_var <- rlang::sym(vars)
+    df <- mutate(df,
+                 facet = paste(vars),
+                 value = !!quo_var)
   }
 
-  plot <- df %>%
+  df %>%
     # Remove missing values
-    filter(!is.na(!!quo_var)) %>%
-    when(
-      !is.null(facet) ~
-        arrange(., !!quo_facet, !!quo_var) %>%
-        group_by(!!quo_facet),
-      ~ select(., everything())
-    ) %>%
+    filter(!is.na(value)) %>%
+    arrange(facet, value) %>%
+    group_by(facet) %>%
     # Create density to overlay
-    mutate(grid = seq(min(!!quo_var), max(!!quo_var), length = n()),
-           density = dnorm(grid, mean(!!quo_var), sd(!!quo_var))) %>%
+    mutate(grid = seq(min(value), max(value), length = n()),
+           density = dnorm(grid, mean(value), sd(value))) %>%
     # Plot histogram and density on density scale - need to try and fix if possible
-    ggplot(aes(!!quo_var)) +
+    ggplot(aes(value)) +
     geom_histogram(aes(y = ..density..), bins = 20) +
     geom_line(aes(grid, density), col = "red") +
+    facet_wrap(~facet, scales = "free") +
     theme_minimal()
 
-  if(!is.null(facet)) {
-    plot <- plot +
-      facet_wrap(formula_facet, scales = "free")
-  }
-
-  return(plot)
 }
