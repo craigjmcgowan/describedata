@@ -99,7 +99,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
           filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
           mutate_at(vars(one_of(cat_vars)), as.character) %>%
           select(one_of(cat_vars), temp_out) %>%
-          gather(key = "variable", value = "value", -temp_out) %>%
+          {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
           # Remove missing values for p-value calcs
           filter(value != "(Missing)", !is.na(value)) %>%
           group_by(variable) %>%
@@ -118,7 +118,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
           # Remove missing outcomes for p-value calcs
           filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
           select(temp_out, one_of(non_normal_vars)) %>%
-          gather(key = "variable", value = "value", -temp_out) %>%
+          {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
           # Remove missing values for p-value calcs
           filter(!is.na(value)) %>%
           group_by(variable) %>%
@@ -133,7 +133,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
           # Remove missing outcomes for p-value calcs
           filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
           select(temp_out, one_of(normal_vars)) %>%
-          gather(key = "variable", value = "value", -temp_out) %>%
+          {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
           # Remove missing values for p-value calcs
           filter(!is.na(value)) %>%
           group_by(variable) %>%
@@ -160,7 +160,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     when(!is.null(normal_vars) ~ bind_rows(.,
      df %>%
        select(one_of(c(normal_vars))) %>%
-       gather(key = "variable", value = "value") %>%
+       {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
        group_by(variable) %>%
        summarize(n = n() - sum(is.na(value)),
                  nmiss = sum(is.na(value)),
@@ -176,7 +176,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     when(!is.null(c(non_normal_vars)) ~ bind_rows(.,
       df %>%
         select(one_of(c(non_normal_vars))) %>%
-        gather(key = "variable", value = "value") %>%
+        {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
         group_by(variable) %>%
         summarize(n = n() - sum(is.na(value)),
                   nmiss = sum(is.na(value)),
@@ -195,7 +195,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
         select(one_of(cat_vars)) %>%
         # Remove missings - if include_na = TRUE then there should be no NA
         na.omit() %>%
-        gather(key = "variable", value = "value") %>%
+        {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
         group_by(variable, value) %>%
         summarize(n = n()) %>%
         mutate(display = paste0(n, " (", round(n / sum(n) * 100), "%)")) %>%
@@ -210,7 +210,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
       df %>%
         select(temp_out,
                one_of(c(normal_vars))) %>%
-        gather(key = "variable", value = "value", -temp_out) %>%
+        {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
         group_by(temp_out, variable) %>%
         summarize(mean = mean(value, na.rm = T),
                   sd = sd(value, na.rm = T)) %>%
@@ -225,7 +225,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
        df %>%
          select(temp_out,
                 one_of(c(non_normal_vars))) %>%
-         gather(key = "variable", value = "value", -temp_out) %>%
+         {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
          group_by(temp_out, variable) %>%
          summarize(median = median(value, na.rm = T),
                    iqr = IQR(value, na.rm = T)) %>%
@@ -241,7 +241,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
       df %>%
         select(one_of(cat_vars), temp_out) %>%
         na.omit() %>%
-        gather(key = "variable", value = "value", -temp_out) %>%
+        {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
         group_by(temp_out, variable, value) %>%
         summarize(n = n()) %>%
         mutate(display = paste0(n, " (", round(n / sum(n) * 100), "%)")) %>%

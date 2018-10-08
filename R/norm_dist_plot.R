@@ -29,8 +29,8 @@ norm_dist_plot <- function(df, vars) {
     stop("Not all variables are in the provided data.frame")
 
   if(length(vars) > 1) {
-    df <- gather(df, key = "facet", value = "value",
-                 vars) %>%
+    df <- suppressWarnings(gather(df, key = "facet", value = "value",
+                 vars)) %>%
       select(facet, value)
   } else {
     quo_var <- rlang::sym(vars)
