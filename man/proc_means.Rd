@@ -4,17 +4,21 @@
 \alias{proc_means}
 \title{Replica of SAS's PROC MEANS}
 \usage{
-proc_means(df, vars = NULL, by = NULL, n = T, mean = TRUE,
-  sd = TRUE, min = TRUE, max = TRUE, median = FALSE, q1 = FALSE,
-  q3 = FALSE, iqr = FALSE, nmiss = FALSE, nobs = FALSE,
-  p = FALSE)
+proc_means(df, vars = NULL, var_order = NULL, by = NULL, n = T,
+  mean = TRUE, sd = TRUE, min = TRUE, max = TRUE, median = FALSE,
+  q1 = FALSE, q3 = FALSE, iqr = FALSE, nmiss = FALSE,
+  nobs = FALSE, p = FALSE)
 }
 \arguments{
 \item{df}{A data frame or tibble.}
 
-\item{vars}{A character vector of numeric variables to generate descriptive
+\item{vars}{Character vector of numeric variables to generate descriptive
 statistics for. If the default (\code{NULL}), all variables are included,
 except for any specified in \code{by}.}
+
+\item{var_order}{Character vector listing the variable names in the order
+results should be displayed. If the default (\code{NULL}), variables are
+displayed in the order specified in \code{vars}.}
 
 \item{by}{Discrete variable. Separate statistics will be produced for
 each level. Default \code{NULL} provides statistics for all observations.}

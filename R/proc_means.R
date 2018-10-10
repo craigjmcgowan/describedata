@@ -4,9 +4,12 @@
 #' stratifying by a categorical variable.
 #'
 #' @param df A data frame or tibble.
-#' @param vars A character vector of numeric variables to generate descriptive
+#' @param vars Character vector of numeric variables to generate descriptive
 #'   statistics for. If the default (\code{NULL}), all variables are included,
 #'   except for any specified in \code{by}.
+#' @param var_order Character vector listing the variable names in the order
+#'   results should be displayed. If the default (\code{NULL}), variables are
+#'   displayed in the order specified in \code{vars}.
 #' @param by Discrete variable. Separate statistics will be produced for
 #'   each level. Default \code{NULL} provides statistics for all observations.
 #' @param n logical. Display number of rows with values. Default \code{TRUE}.
@@ -36,10 +39,10 @@
 #' proc_means(iris, by = "Species")
 #'
 
-proc_means <- function(df, vars = NULL, by = NULL, n = T, mean = TRUE,
-                       sd = TRUE, min = TRUE, max = TRUE, median = FALSE,
-                       q1 = FALSE, q3 = FALSE, iqr = FALSE, nmiss = FALSE,
-                       nobs = FALSE, p = FALSE) {
+proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
+                       mean = TRUE, sd = TRUE, min = TRUE, max = TRUE,
+                       median = FALSE, q1 = FALSE, q3 = FALSE, iqr = FALSE,
+                       nmiss = FALSE, nobs = FALSE, p = FALSE) {
 
   if(is.null(by)) p <- FALSE
 
@@ -48,6 +51,25 @@ proc_means <- function(df, vars = NULL, by = NULL, n = T, mean = TRUE,
 
   # If no variables provided, use all variables
   if (is.null(vars)) vars <- names(df)[!names(df) %in% by]
+
+  # Order for displaying results
+  if(is.null(var_order)) var_order <- vars
+
+  if(length(var_order) != length(vars)) {
+    stop(paste(length(var_order), "variables in var_order, but stats calculated for",
+               length(vars),
+               "variables.\nCheck var_order or vars that all variables included."))
+  }
+  if(!all(var_order %in% vars)) {
+    stop(paste("The following variables in var_order need to be included in vars:\n",
+               paste(var_order[!var_order %in% vars],
+                     collapse = ",")))
+  }
+  if(!all(vars %in% var_order)) {
+    stop(paste("The following variables in vars need to be included in var_order:\n",
+               paste(vars[!vars %in% var_order],
+                     collapse = ",")))
+  }
 
   # Select variables requested and zap formats and labels from import
   data <- df %>%
@@ -118,6 +140,9 @@ proc_means <- function(df, vars = NULL, by = NULL, n = T, mean = TRUE,
          ~ select(., everything())) %>%
     when(isTRUE(p) ~ left_join(., p_values, by = "variable") %>%
            mutate(p.value = ifelse(row_number() == 1, p.value, "")),
-         ~ select(., everything()))
+         ~ select(., everything())) %>%
+    # Arrange display results
+    mutate(variable = factor(variable, levels = var_order)) %>%
+    arrange(variable)
 
 }
