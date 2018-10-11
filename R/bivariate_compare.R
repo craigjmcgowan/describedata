@@ -83,9 +83,9 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
 
   if (isTRUE(include_na)) {
     df <- df %>%
-      mutate(temp_out = fct_explicit_na(temp_out)) %>%
+      mutate(temp_out = forcats::fct_explicit_na(temp_out)) %>%
       when(!is.null(cat_vars) ~
-             mutate_at(., vars(one_of(cat_vars)), fct_explicit_na),
+             mutate_at(., vars(one_of(cat_vars)), forcats::fct_explicit_na),
            ~ select(., everything()))
   }
 
@@ -317,6 +317,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
   n <- df %>%
     group_by(temp_out) %>%
     summarize(n = n()) %>%
+    filter(!is.na(temp_out)) %>%
     arrange(temp_out)
 
   display <- display %>%
