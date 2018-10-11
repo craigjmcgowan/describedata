@@ -172,3 +172,21 @@ test_that("displays fisher p value for cat vars if requested", {
 
   expect_equal(test_display_small, test_compare_small)
 })
+
+test_that("column counts work if include_na = F", {
+  set.seed(124)
+  test_df <- as.data.frame(lapply(mtcars, function(cc){
+    cc[ sample(c(TRUE, NA), prob = c(0.85, 0.15), size = length(cc), replace = TRUE) ]
+  }))
+
+  expect_equal(
+    names(bivariate_compare(test_df, compare = "cyl", normal_vars = "disp"))[2],
+    "Overall (n = 28)"
+  )
+
+  expect_equal(
+    names(bivariate_compare(mtcars, compare = "cyl", normal_vars = "disp"))[2],
+    "Overall (n = 32)"
+  )
+})
+
