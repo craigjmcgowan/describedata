@@ -267,27 +267,28 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                      collapse = ",")))
   }
 
-  value_order <- character()
-  for (i in 1:length(var_order)) {
-    if(var_order[i] %in% cat_vars) {
-      value_order <- c(value_order, select(df, matches(var_order[i])) %>%
-                         pull(1) %>% levels())
-    } else {
-      value_order <- c(value_order, NA_character_)
-    }
+  # Display results
+  display_temp <- overall %>%
+    left_join(by_gender, by = c("variable", "value"))
+
+  # Build display dataset in order - use bind_rows to keep factor levels in order
+  display <- tibble()
+  for(i in seq_along(var_order)) {
+    display <- bind_rows(
+      display,
+      filter(display_temp, variable == var_order[i]) %>%
+        # Arrange by original factor order if a categorical variable
+        when(var_order[i] %in% cat_vars ~
+               mutate(., value = factor(value,
+                                        levels = levels(pull(df, var_order[i])))) %>%
+               arrange(value) %>%
+               mutate_all(as.character),
+             ~ select(., everything()))
+    )
   }
 
-  # Display results
-  display <- overall %>%
-    left_join(by_gender, by = c("variable", "value")) %>%
-    mutate(value = ifelse(is.na(value) & variable %in% cat_vars,
-                          "(Missing)", value),
-           variable = factor(variable, levels = var_order),
-           value = factor(value, levels = unique(value_order,
-                                                 fromLast = TRUE))) %>%
-    arrange(variable, value) %>%
-    # Return variable to being character for joining
-    mutate(variable = as.character(variable)) %>%
+  # Remove duplicate values for final printing - make it pretty.
+  display <- display %>%
     group_by(variable) %>%
     mutate(., p.value = ifelse(row_number(variable) == 1,
                                                 p.value, " ")) %>%
