@@ -4,20 +4,20 @@
 \alias{sample_flow}
 \title{Create table illustrating sample exclusions}
 \usage{
-sample_flow(df, na_vars)
+sample_flow(df, exclusions = c())
 }
 \arguments{
 \item{df}{A data.frame or tibble.}
 
-\item{na_vars}{An ordered character vector containing variables that should
-excluded due to having missing values (\code{NA}, \code{NaN}). Exclusions
-occur in the order specified.}
+\item{exclusions}{Character vector of logical conditions indicating which rows
+should be excluded from the final sample. Exclusions occur in the order
+specified.}
 }
 \value{
-A data.frame with columns variable, 'Sequential Missing', and 
-  'Total Missing' for display.
+A data.frame with columns Exclusion, 'Sequential Excluded', and
+  'Total Excluded' for display.
 }
 \description{
 Generate a table illustrating sequential exclusion from an analytical sample
-  due to missing values.
+  due to user specified exclusions.
 }

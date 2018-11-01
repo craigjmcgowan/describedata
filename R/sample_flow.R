@@ -1,55 +1,54 @@
-#' Create table illustrating sample exclusions 
+#' Create table illustrating sample exclusions
 #'
 #' Generate a table illustrating sequential exclusion from an analytical sample
-#'   due to missing values.
+#'   due to user specified exclusions.
 #'
 #' @param df A data.frame or tibble.
-#' @param na_vars An ordered character vector containing variables that should
-#'   excluded due to having missing values (\code{NA}, \code{NaN}). Exclusions
-#'   occur in the order specified.
+#' @param exclusions Character vector of logical conditions indicating which rows
+#'   should be excluded from the final sample. Exclusions occur in the order
+#'   specified.
 #'
 #' @import dplyr
-#' @import tidyr
 #' @export
-#' @return A data.frame with columns variable, 'Sequential Missing', and 
-#'   'Total Missing' for display.
+#' @return A data.frame with columns Exclusion, 'Sequential Excluded', and
+#'   'Total Excluded' for display.
 #'
 
 
-sample_flow <- function(df, na_vars) {
-  
-  # Determine n missing for each variable
-  nmiss <- df %>%
-    select(one_of(na_vars)) %>%
-    gather(key = "Variable", value = "value") %>%
-    group_by(Variable) %>%
-    summarize(`Total Missing` = sum(is.na(value))) %>%
-    ungroup() %>%
-    # Set variable as factor for ordering
-    mutate(Variable = factor(Variable, levels = na_vars)) %>%
-    arrange(Variable)
- 
+sample_flow <- function(df, exclusions = c()) {
 
-  # Determine sequential missing for each variable
-  seq_miss_df <- df
-  seq_miss <- tibble()
+  # if(length(exclusions) > 0 & length(inclusions) > 0)
+  #   stop("specify only inclusion or exclusion criteria")
 
-  for (i in 1:length(na_vars)) {
-    quo_var <- rlang::sym(na_vars[i])
-    
-    seq_miss <- seq_miss_df %>%
-      select(one_of(na_vars[i])) %>%
-      summarize(Variable = na_vars[i],
-                N = sum(!is.na(!!quo_var)),
-                `Sequential Missing` = sum(is.na(!!quo_var))) %>%
-      bind_rows(seq_miss)
-    
-    seq_miss_df <- seq_miss_df %>%
-      filter(!is.na(!!quo_var))
+  seq_excl_df <- df
+  seq_excl <- tibble()
+  all_excl <- tibble()
+
+  for (i in seq_along(exclusions)) {
+
+    # Total excluded due to this exclusion
+    all_excl <- bind_rows(
+      all_excl,
+      tibble(Exclusion = exclusions[i],
+             `Total Excluded` = nrow(filter(df, eval(parse(text = exclusions[i])))))
+    )
+
+    # Sequential exclusions
+    seq_excl <- bind_rows(
+      seq_excl,
+      tibble(Exclusion = exclusions[i],
+             N = nrow(filter(seq_excl_df, !eval(parse(text = exclusions[i])))),
+             `Sequential Excluded` = nrow(seq_excl_df) - N)
+    )
+
+    # Update exclusion df for next iteration
+    seq_excl_df <-
+      filter(seq_excl_df, !eval(parse(text = exclusions[i])))
+
   }
-  
-  seq_miss <- mutate(seq_miss, Variable = factor(Variable, levels = na_vars)) %>%
-    arrange(Variable)
-  
-  left_join(seq_miss, nmiss, by = "Variable")
+
+  left_join(seq_excl, all_excl, by = "Exclusion") %>%
+    mutate(Exclusion = factor(Exclusion, levels = exclusions)) %>%
+    arrange(Exclusion)
+
 }
