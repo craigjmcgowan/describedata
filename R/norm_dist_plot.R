@@ -7,7 +7,7 @@
 #'
 #'
 #' @param df A data.frame or tibble.
-#' @param var A character vector of continous variable names.
+#' @param vars A character vector of continous variable names.
 #'
 #' @import dplyr
 #' @import tidyr

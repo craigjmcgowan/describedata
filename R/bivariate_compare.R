@@ -276,14 +276,14 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
   for(i in seq_along(var_order)) {
     display <- bind_rows(
       display,
-      filter(display_temp, variable == var_order[i]) %>%
-        # Arrange by original factor order if a categorical variable
-        when(var_order[i] %in% cat_vars ~
-               mutate(., value = factor(value,
-                                        levels = levels(pull(df, var_order[i])))) %>%
-               arrange(value) %>%
-               mutate_all(as.character),
-             ~ select(., everything()))
+      when(!var_order[i] %in% cat_vars ~
+             filter(display_temp, variable == var_order[i]),
+           ~ filter(display_temp, variable == var_order[i]) %>%
+             mutate(value = factor(value,
+                                   levels = levels(pull(df, var_order[i])))) %>%
+             arrange(value) %>%
+             mutate_all(as.character))# %>%  # Add blank line at top for variable name
+             # bind_rows(tibble(variable = var_order[i]), .))
     )
   }
 

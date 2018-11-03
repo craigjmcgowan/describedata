@@ -98,7 +98,8 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
       do(broom::tidy(aov(value ~ !!quo_by, data = .))) %>%
       filter(!is.na(p.value)) %>%
       mutate(p.value = ifelse(p.value < 0.001, "< 0.001", paste(round(p.value, 3)))) %>%
-      select(variable, p.value)
+      select(variable, p.value) %>%
+      ungroup()
   }
 
   # Calculate summary statistics and return requested stats
@@ -141,6 +142,7 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
     when(isTRUE(p) ~ left_join(., p_values, by = "variable") %>%
            mutate(p.value = ifelse(row_number() == 1, p.value, "")),
          ~ select(., everything())) %>%
+    ungroup() %>%
     # Arrange display results
     mutate(variable = factor(variable, levels = var_order)) %>%
     arrange(variable)
