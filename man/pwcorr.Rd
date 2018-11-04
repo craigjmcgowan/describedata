@@ -4,13 +4,16 @@
 \alias{pwcorr}
 \title{Replica of Stata's pwcorr function}
 \usage{
-pwcorr(df, vars = NULL, var_label_df = NULL)
+pwcorr(df, vars = NULL, method = "pearson", var_label_df = NULL)
 }
 \arguments{
 \item{df}{A data.frame or tibble.}
 
 \item{vars}{A character vector of numeric variables to generate pairwise
 correlations for. If the default (\code{NULL}), all variables are included.}
+
+\item{method}{One of \code{"pearson"}, \code{"kendall"}, or \code{"spearman"}
+passed on to \code{"cor"}.}
 
 \item{var_label_df}{A data.frame or tibble with columns "variable" and
 "label" that contains display labels for each variable specified in
@@ -21,6 +24,6 @@ A data.frame displaying the pairwise correlation coefficients
   between all variables in \code{vars}.
 }
 \description{
-Calculate and return a matrix of pairwise correlation coefficients with
-  significance levels.
+Calculate and return a matrix of pairwise correlation coefficients. Returns
+  significance levels if \code{method == "pearson"}
 }
