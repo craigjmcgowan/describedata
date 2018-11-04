@@ -6,8 +6,8 @@
 \usage{
 bivariate_compare(df, compare, normal_vars = NULL,
   non_normal_vars = NULL, cat_vars = NULL, p = TRUE,
-  include_na = FALSE, fisher = FALSE, workspace = NULL,
-  var_order = NULL, var_label_df = NULL)
+  include_na = FALSE, cont_n = FALSE, fisher = FALSE,
+  workspace = NULL, var_order = NULL, var_label_df = NULL)
 }
 \arguments{
 \item{df}{A data.frame or tibble.}
@@ -29,6 +29,9 @@ Default \code{TRUE}.}
 
 \item{include_na}{Logical. Should \code{NA} values be included in the
 table and accompanying statistical tests? Default \code{FALSE}.}
+
+\item{cont_n}{Logical. Display sample n for continuous variables in the
+table. Default \code{FALSE}.}
 
 \item{fisher}{Logical. Should Fisher's exact test be used for categorical
 variables? Default \code{FALSE}. Ignored if \code{p == FALSE}.}

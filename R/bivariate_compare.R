@@ -26,6 +26,8 @@
 #'   Default \code{TRUE}.
 #' @param include_na Logical. Should \code{NA} values be included in the
 #'   table and accompanying statistical tests? Default \code{FALSE}.
+#' @param cont_n Logical. Display sample n for continuous variables in the
+#'   table. Default \code{FALSE}.
 #' @param fisher Logical. Should Fisher's exact test be used for categorical
 #'   variables? Default \code{FALSE}. Ignored if \code{p == FALSE}.
 #' @param workspace Numeric variable indicating the workspace to be used for
@@ -59,6 +61,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                               non_normal_vars = NULL,
                               cat_vars = NULL, p = TRUE,
                               include_na = FALSE,
+                              cont_n = FALSE,
                               fisher = FALSE,
                               workspace = NULL,
                               var_order = NULL,
@@ -162,32 +165,49 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
        select(one_of(c(normal_vars))) %>%
        {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
        group_by(variable) %>%
-       summarize(n = n() - sum(is.na(value)),
-                 nmiss = sum(is.na(value)),
-                 mean = mean(value, na.rm = T),
+       summarize(mean = mean(value, na.rm = T),
                  sd = sd(value, na.rm = T)) %>%
-       mutate(n_display = paste0(n, " (", nmiss, ")"),
-              display = paste0(round(mean, 2),
-                               " (", round(sd, 2),
-                               ")"),
+       mutate(display = paste0(round(mean, 2),
+                               " (", round(sd, 2), ")"),
               value = NA_character_) %>%
-       select(variable, value, n_display, display)),
+       select(variable, value, display) %>%
+       when(isTRUE(cont_n) ~
+              bind_rows(.,
+                        df %>%
+                          filter(!is.na(temp_out)) %>%
+                          select(one_of(c(normal_vars))) %>%
+                          {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
+                          group_by(variable) %>%
+                          summarize(n = n() - sum(is.na(value))) %>%
+                          mutate(display = paste0(n),
+                                 value = "n") %>%
+                          select(variable, value, display)),
+            ~ select(., everything()))),
       ~ bind_rows(., tibble())) %>%
     when(!is.null(c(non_normal_vars)) ~ bind_rows(.,
       df %>%
         select(one_of(c(non_normal_vars))) %>%
         {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
         group_by(variable) %>%
-        summarize(n = n() - sum(is.na(value)),
-                  nmiss = sum(is.na(value)),
-                  median = median(value, na.rm = T),
+        summarize(median = median(value, na.rm = T),
                   iqr = IQR(value, na.rm = T)) %>%
-        mutate(n_display = paste0(n, " (", nmiss, ")"),
-               display = paste0(round(median, 2),
+        mutate(display = paste0(round(median, 2),
                                 " (", round(iqr, 2),
                                 ")"),
-               value = NA_character_) %>%
-        select(variable, value, n_display, display)),
+                      value = NA_character_) %>%
+        select(variable, value, display) %>%
+        when(isTRUE(cont_n) ~
+               bind_rows(.,
+                         df %>%
+                           filter(!is.na(temp_out)) %>%
+                           select(one_of(c(non_normal_vars))) %>%
+                           {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
+                           group_by(variable) %>%
+                           summarize(n = n() - sum(is.na(value))) %>%
+                           mutate(display = paste0(n),
+                                  value = "n") %>%
+                           select(variable, value, display)),
+             ~ select(., everything()))),
       ~ bind_rows(., tibble())) %>%
     # Categorical variable summaries
     when(!is.null(cat_vars) ~ bind_rows(.,
@@ -219,6 +239,19 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                                 ")"),
                value = NA_character_) %>%
         select(temp_out, variable, value, display) %>%
+        when(isTRUE(cont_n) ~
+               bind_rows(.,
+                         df %>%
+                           filter(!is.na(temp_out)) %>%
+                           select(temp_out,
+                                  one_of(c(normal_vars))) %>%
+                                  {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
+                           group_by(temp_out, variable) %>%
+                           summarize(n = n() - sum(is.na(value))) %>%
+                           mutate(display = paste0(n),
+                                  value = "n") %>%
+                           select(temp_out, variable, value, display)),
+             ~ select(., everything())) %>%
         spread(key = temp_out, value = "display")),
       ~ bind_rows(., tibble())) %>%
     when(!is.null(c(non_normal_vars)) ~ bind_rows(.,
@@ -234,6 +267,19 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                                  ")"),
                 value = NA_character_) %>%
          select(temp_out, variable, value, display) %>%
+         when(isTRUE(cont_n) ~
+                bind_rows(.,
+                          df %>%
+                            filter(!is.na(temp_out)) %>%
+                            select(temp_out,
+                                   one_of(c(non_normal_vars))) %>%
+                                   {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
+                            group_by(temp_out, variable) %>%
+                            summarize(n = n() - sum(is.na(value))) %>%
+                            mutate(display = paste0(n),
+                                   value = "n") %>%
+                            select(temp_out, variable, value, display)),
+              ~ select(., everything())) %>%
          spread(key = temp_out, value = "display")),
          ~ bind_rows(., tibble())) %>%
     # Categorical variable summaries
@@ -273,16 +319,20 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
 
   # Build display dataset in order - use bind_rows to keep factor levels in order
   display <- tibble()
+
   for(i in seq_along(var_order)) {
     display <- bind_rows(
       display,
-      when(!var_order[i] %in% cat_vars ~
-             filter(display_temp, variable == var_order[i]),
-           ~ filter(display_temp, variable == var_order[i]) %>%
+      when(var_order[i],
+           . %in% cat_vars ~
+             filter(display_temp, variable == .) %>%
              mutate(value = factor(value,
                                    levels = levels(pull(df, var_order[i])))) %>%
              arrange(value) %>%
-             mutate_all(as.character))# %>%  # Add blank line at top for variable name
+             mutate_all(as.character),
+           . %in% c(normal_vars, non_normal_vars) ~
+             filter(display_temp, variable == var_order[i]),
+           ~ tibble()) # %>%  # Add blank line at top for variable name
              # bind_rows(tibble(variable = var_order[i]), .))
     )
   }
