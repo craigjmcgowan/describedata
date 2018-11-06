@@ -28,6 +28,14 @@
 #'   table and accompanying statistical tests? Default \code{FALSE}.
 #' @param cont_n Logical. Display sample n for continuous variables in the
 #'   table. Default \code{FALSE}.
+#' @param all_cont_mean Logical. Display mean (sd) for all continous variables.
+#'   Default \code{FALSE} results in mean (sd) for normally distributed variables
+#'   and median (IQR) for non-normally distributed variables. Must be
+#'   \code{FALSE} if \code{all_cont_median == TRUE}.
+#' @param all_cont_median Logical. Display median (sd) for all continuous variables.
+#'   Default \code{FALSE} results in mean (sd) for normally distributed variables
+#'   and median (IQR) for non-normally distributed variables. Must be
+#'   \code{FALSE} if \code{all_cont_mean == TRUE}.
 #' @param fisher Logical. Should Fisher's exact test be used for categorical
 #'   variables? Default \code{FALSE}. Ignored if \code{p == FALSE}.
 #' @param workspace Numeric variable indicating the workspace to be used for
@@ -62,6 +70,8 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                               cat_vars = NULL, p = TRUE,
                               include_na = FALSE,
                               cont_n = FALSE,
+                              all_cont_mean = FALSE,
+                              all_cont_median = FALSE,
                               fisher = FALSE,
                               workspace = NULL,
                               var_order = NULL,
@@ -72,6 +82,19 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
   if (!is.null(var_label_df)) {
     if (!names(var_label_df) %in% c("variable", "label"))
       stop("var_label_df must contains columns `variable` and `label`")
+  }
+
+  if (isTRUE(all_cont_mean) & isTRUE(all_cont_median))
+    stop("only one of all_cont_mean or all_cont_median can be TRUE")
+
+  # Code display format for continuous variables
+  if(isTRUE(all_cont_mean)) {
+    norm_disp <- non_norm_disp <-"mean"
+  } else if(isTRUE(all_cont_median)) {
+    norm_disp <- non_norm_disp <- "median"
+  } else {
+    norm_disp <- "mean"
+    non_norm_disp <- "median"
   }
 
   # Add variable for outcome to hard code in tests later
@@ -166,9 +189,15 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
        {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
        group_by(variable) %>%
        summarize(mean = mean(value, na.rm = T),
-                 sd = sd(value, na.rm = T)) %>%
-       mutate(display = paste0(round(mean, 2),
-                               " (", round(sd, 2), ")"),
+                 sd = sd(value, na.rm = T),
+                 median = median(value, na.rm = T),
+                 iqr = IQR(value, na.rm = T)) %>%
+       mutate(display = case_when(norm_disp == "mean" ~
+                                    paste0(round(mean, 2),
+                                           " (", round(sd, 2), ")"),
+                                  norm_disp == "median" ~
+                                    paste0(round(median, 2),
+                                           " (", round(iqr, 2), ")")),
               value = NA_character_) %>%
        select(variable, value, display) %>%
        when(isTRUE(cont_n) ~
@@ -189,11 +218,16 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
         select(one_of(c(non_normal_vars))) %>%
         {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
         group_by(variable) %>%
-        summarize(median = median(value, na.rm = T),
+        summarize(mean = mean(value, na.rm = T),
+                  sd = sd(value, na.rm = T),
+                  median = median(value, na.rm = T),
                   iqr = IQR(value, na.rm = T)) %>%
-        mutate(display = paste0(round(median, 2),
-                                " (", round(iqr, 2),
-                                ")"),
+        mutate(display = case_when(non_norm_disp == "mean" ~
+                                     paste0(round(mean, 2),
+                                            " (", round(sd, 2), ")"),
+                                   non_norm_disp == "median" ~
+                                     paste0(round(median, 2),
+                                            " (", round(iqr, 2), ")")),
                       value = NA_character_) %>%
         select(variable, value, display) %>%
         when(isTRUE(cont_n) ~
@@ -233,10 +267,15 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
         {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
         group_by(temp_out, variable) %>%
         summarize(mean = mean(value, na.rm = T),
-                  sd = sd(value, na.rm = T)) %>%
-        mutate(display = paste0(round(mean, 2),
-                                " (", round(sd, 2),
-                                ")"),
+                  sd = sd(value, na.rm = T),
+                  median = median(value, na.rm = T),
+                  iqr = IQR(value, na.rm = T)) %>%
+        mutate(display = case_when(norm_disp == "mean" ~
+                                     paste0(round(mean, 2),
+                                            " (", round(sd, 2), ")"),
+                                   norm_disp == "median" ~
+                                     paste0(round(median, 2),
+                                            " (", round(iqr, 2), ")")),
                value = NA_character_) %>%
         select(temp_out, variable, value, display) %>%
         when(isTRUE(cont_n) ~
@@ -260,11 +299,16 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                 one_of(c(non_normal_vars))) %>%
          {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
          group_by(temp_out, variable) %>%
-         summarize(median = median(value, na.rm = T),
+         summarize(mean = mean(value, na.rm = T),
+                   sd = sd(value, na.rm = T),
+                   median = median(value, na.rm = T),
                    iqr = IQR(value, na.rm = T)) %>%
-         mutate(display = paste0(round(median, 2),
-                                 " (", round(iqr, 2),
-                                 ")"),
+         mutate(display = case_when(non_norm_disp == "mean" ~
+                                      paste0(round(mean, 2),
+                                             " (", round(sd, 2), ")"),
+                                    non_norm_disp == "median" ~
+                                      paste0(round(median, 2),
+                                             " (", round(iqr, 2), ")")),
                 value = NA_character_) %>%
          select(temp_out, variable, value, display) %>%
          when(isTRUE(cont_n) ~

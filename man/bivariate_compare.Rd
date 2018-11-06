@@ -6,8 +6,9 @@
 \usage{
 bivariate_compare(df, compare, normal_vars = NULL,
   non_normal_vars = NULL, cat_vars = NULL, p = TRUE,
-  include_na = FALSE, cont_n = FALSE, fisher = FALSE,
-  workspace = NULL, var_order = NULL, var_label_df = NULL)
+  include_na = FALSE, cont_n = FALSE, all_cont_mean = FALSE,
+  all_cont_median = FALSE, fisher = FALSE, workspace = NULL,
+  var_order = NULL, var_label_df = NULL)
 }
 \arguments{
 \item{df}{A data.frame or tibble.}
@@ -32,6 +33,16 @@ table and accompanying statistical tests? Default \code{FALSE}.}
 
 \item{cont_n}{Logical. Display sample n for continuous variables in the
 table. Default \code{FALSE}.}
+
+\item{all_cont_mean}{Logical. Display mean (sd) for all continous variables.
+Default \code{FALSE} results in mean (sd) for normally distributed variables
+and median (IQR) for non-normally distributed variables. Must be
+\code{FALSE} if \code{all_cont_median == TRUE}.}
+
+\item{all_cont_median}{Logical. Display median (sd) for all continuous variables.
+Default \code{FALSE} results in mean (sd) for normally distributed variables
+and median (IQR) for non-normally distributed variables. Must be
+\code{FALSE} if \code{all_cont_mean == TRUE}.}
 
 \item{fisher}{Logical. Should Fisher's exact test be used for categorical
 variables? Default \code{FALSE}. Ignored if \code{p == FALSE}.}
