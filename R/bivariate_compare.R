@@ -36,6 +36,10 @@
 #'   Default \code{FALSE} results in mean (sd) for normally distributed variables
 #'   and median (IQR) for non-normally distributed variables. Must be
 #'   \code{FALSE} if \code{all_cont_mean == TRUE}.
+#' @param iqr Logical. If the median is displayed for a continous variable, should
+#'   inter-quartile range be displayed as well (\code{TRUE}), or should the values
+#'   for the 25th and 75th percentiles be displayed (\code{FALSE})? Default
+#'   \code{TRUE}
 #' @param fisher Logical. Should Fisher's exact test be used for categorical
 #'   variables? Default \code{FALSE}. Ignored if \code{p == FALSE}.
 #' @param workspace Numeric variable indicating the workspace to be used for
@@ -72,6 +76,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                               cont_n = FALSE,
                               all_cont_mean = FALSE,
                               all_cont_median = FALSE,
+                              iqr = TRUE,
                               fisher = FALSE,
                               workspace = NULL,
                               var_order = NULL,
@@ -80,7 +85,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
   quo_compare <- rlang::sym(compare)
 
   if (!is.null(var_label_df)) {
-    if (!names(var_label_df) %in% c("variable", "label"))
+    if (!all(names(var_label_df) %in% c("variable", "label")))
       stop("var_label_df must contains columns `variable` and `label`")
   }
 
@@ -91,10 +96,18 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
   if(isTRUE(all_cont_mean)) {
     norm_disp <- non_norm_disp <-"mean"
   } else if(isTRUE(all_cont_median)) {
-    norm_disp <- non_norm_disp <- "median"
+    if(isTRUE(iqr)) {
+      norm_disp <- non_norm_disp <- "median"
+    } else {
+      norm_disp <- non_norm_disp <- "percentile"
+    }
   } else {
     norm_disp <- "mean"
-    non_norm_disp <- "median"
+    if(isTRUE(iqr)) {
+      non_norm_disp <- "median"
+    } else {
+      non_norm_disp <- "percentile"
+    }
   }
 
   # Add variable for outcome to hard code in tests later
@@ -191,13 +204,19 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
        summarize(mean = mean(value, na.rm = T),
                  sd = sd(value, na.rm = T),
                  median = median(value, na.rm = T),
-                 iqr = IQR(value, na.rm = T)) %>%
+                 iqr = IQR(value, na.rm = T),
+                 q1 = quantile(value, 0.25, na.rm = T),
+                 q3 = quantile(value, 0.75, na.rm = T)) %>%
        mutate(display = case_when(norm_disp == "mean" ~
                                     paste0(round(mean, 2),
                                            " (", round(sd, 2), ")"),
                                   norm_disp == "median" ~
                                     paste0(round(median, 2),
-                                           " (", round(iqr, 2), ")")),
+                                           " (", round(iqr, 2), ")"),
+                                  norm_disp == "percentile" ~
+                                    paste0(round(median, 2),
+                                           " (", round(q1, 2), ", ",
+                                           round(q3, 2), ")")),
               value = NA_character_) %>%
        select(variable, value, display) %>%
        when(isTRUE(cont_n) ~
@@ -221,13 +240,19 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
         summarize(mean = mean(value, na.rm = T),
                   sd = sd(value, na.rm = T),
                   median = median(value, na.rm = T),
-                  iqr = IQR(value, na.rm = T)) %>%
+                  iqr = IQR(value, na.rm = T),
+                  q1 = quantile(value, 0.25, na.rm = T),
+                  q3 = quantile(value, 0.75, na.rm = T)) %>%
         mutate(display = case_when(non_norm_disp == "mean" ~
                                      paste0(round(mean, 2),
                                             " (", round(sd, 2), ")"),
                                    non_norm_disp == "median" ~
                                      paste0(round(median, 2),
-                                            " (", round(iqr, 2), ")")),
+                                            " (", round(iqr, 2), ")"),
+                                   non_norm_disp == "percentile" ~
+                                     paste0(round(median, 2),
+                                            " (", round(q1, 2), ", ",
+                                            round(q3, 2), ")")),
                       value = NA_character_) %>%
         select(variable, value, display) %>%
         when(isTRUE(cont_n) ~
@@ -247,9 +272,9 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     when(!is.null(cat_vars) ~ bind_rows(.,
       df %>%
         select(one_of(cat_vars)) %>%
+        {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
         # Remove missings - if include_na = TRUE then there should be no NA
         na.omit() %>%
-        {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
         group_by(variable, value) %>%
         summarize(n = n()) %>%
         mutate(display = paste0(n, " (", round(n / sum(n) * 100), "%)")) %>%
@@ -269,13 +294,19 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
         summarize(mean = mean(value, na.rm = T),
                   sd = sd(value, na.rm = T),
                   median = median(value, na.rm = T),
-                  iqr = IQR(value, na.rm = T)) %>%
+                  iqr = IQR(value, na.rm = T),
+                  q1 = quantile(value, 0.25, na.rm = T),
+                  q3 = quantile(value, 0.75, na.rm = T)) %>%
         mutate(display = case_when(norm_disp == "mean" ~
                                      paste0(round(mean, 2),
                                             " (", round(sd, 2), ")"),
                                    norm_disp == "median" ~
                                      paste0(round(median, 2),
-                                            " (", round(iqr, 2), ")")),
+                                            " (", round(iqr, 2), ")"),
+                                   norm_disp == "percentile" ~
+                                     paste0(round(median, 2),
+                                            " (", round(q1, 2), ", ",
+                                            round(q3, 2), ")")),
                value = NA_character_) %>%
         select(temp_out, variable, value, display) %>%
         when(isTRUE(cont_n) ~
@@ -298,17 +329,23 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
          select(temp_out,
                 one_of(c(non_normal_vars))) %>%
          {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
-         group_by(temp_out, variable) %>%
+         group_by(temp_out, variable)%>%
          summarize(mean = mean(value, na.rm = T),
                    sd = sd(value, na.rm = T),
                    median = median(value, na.rm = T),
-                   iqr = IQR(value, na.rm = T)) %>%
+                   iqr = IQR(value, na.rm = T),
+                   q1 = quantile(value, 0.25, na.rm = T),
+                   q3 = quantile(value, 0.75, na.rm = T)) %>%
          mutate(display = case_when(non_norm_disp == "mean" ~
                                       paste0(round(mean, 2),
                                              " (", round(sd, 2), ")"),
                                     non_norm_disp == "median" ~
                                       paste0(round(median, 2),
-                                             " (", round(iqr, 2), ")")),
+                                             " (", round(iqr, 2), ")"),
+                                    non_norm_disp == "percentile" ~
+                                      paste0(round(median, 2),
+                                             " (", round(q1, 2), ", ",
+                                             round(q3, 2), ")")),
                 value = NA_character_) %>%
          select(temp_out, variable, value, display) %>%
          when(isTRUE(cont_n) ~
