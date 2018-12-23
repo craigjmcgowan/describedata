@@ -27,6 +27,8 @@
 #' @param p_round Number of decimal places p-values should be rounded to.
 #' @param include_na Logical. Should \code{NA} values be included in the
 #'   table and accompanying statistical tests? Default \code{FALSE}.
+#' @param col_n Logical. Should the total number of observations be displayed
+#'   for each column? Default \code{TRUE}.
 #' @param cont_n Logical. Display sample n for continuous variables in the
 #'   table. Default \code{FALSE}.
 #' @param all_cont_mean Logical. Display mean (sd) for all continous variables.
@@ -76,6 +78,7 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                               p = TRUE,
                               p_round = 4,
                               include_na = FALSE,
+                              col_n = TRUE,
                               cont_n = FALSE,
                               all_cont_mean = FALSE,
                               all_cont_median = FALSE,
@@ -455,15 +458,17 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
 
 
   # Add total N to column headers
-  n <- df %>%
-    group_by(temp_out) %>%
-    summarize(n = n()) %>%
-    filter(!is.na(temp_out)) %>%
-    arrange(temp_out)
+  if (isTRUE(col_n)){
+    n <- df %>%
+      group_by(temp_out) %>%
+      summarize(n = n()) %>%
+      filter(!is.na(temp_out)) %>%
+      arrange(temp_out)
 
-  display <- display %>%
-    rename_at("Overall", function(x) paste0(x, " (n = ", sum(n$n), ")")) %>%
-    rename_at(levels(df$temp_out), function(x) paste0(x, " (n = ", n$n, ")"))
+    display <- display %>%
+      rename_at("Overall", function(x) paste0(x, " (n = ", sum(n$n), ")")) %>%
+      rename_at(levels(df$temp_out), function(x) paste0(x, " (n = ", n$n, ")"))
+  }
 
   return(display)
 }
