@@ -24,6 +24,7 @@
 #'   included in the descriptive table.
 #' @param p Logical. Should p-values be calculated and displayed?
 #'   Default \code{TRUE}.
+#' @param p_round Number of decimal places p-values should be rounded to.
 #' @param include_na Logical. Should \code{NA} values be included in the
 #'   table and accompanying statistical tests? Default \code{FALSE}.
 #' @param cont_n Logical. Display sample n for continuous variables in the
@@ -71,7 +72,9 @@
 
 bivariate_compare <- function(df, compare, normal_vars = NULL,
                               non_normal_vars = NULL,
-                              cat_vars = NULL, p = TRUE,
+                              cat_vars = NULL,
+                              p = TRUE,
+                              p_round = 4,
                               include_na = FALSE,
                               cont_n = FALSE,
                               all_cont_mean = FALSE,
@@ -182,9 +185,15 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
           mutate_all(as.character)),
         ~ bind_rows(., tibble())) %>%
       select(variable, p.value) %>%
-      mutate(p.value = case_when(as.numeric(p.value) < 1e-4 ~ "< 0.0001",
-                                 as.numeric(p.value) >= 1e-4 ~
-                                   format(round(as.numeric(p.value), 4), nsmall = 4),
+      mutate(p.value = case_when(as.numeric(p.value) <
+                                   as.numeric(paste0("1e-", p_round)) ~
+                                   paste0("< 0.",
+                                          paste0(rep.int(0, p_round-1), collapse = ""),
+                                          "1"),
+                                 as.numeric(p.value) >=
+                                   as.numeric(paste0("1e-", p_round)) ~
+                                   format(round(as.numeric(p.value), p_round),
+                                          nsmall = p_round),
                                  TRUE ~ NA_character_),
              p.value = case_when(variable %in% non_normal_vars ~
                                    paste0(p.value, "^a^"),

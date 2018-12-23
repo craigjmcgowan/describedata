@@ -25,6 +25,7 @@
 #' @param nobs logical. Display total number of rows. Default \code{FALSE}.
 #' @param p logical. Calculate p-value across \code{by} groups using \code{aov}.
 #'   Ignored if no \code{by} variable specified. Default \code{FALSE}.
+#' @param p_round Number of decimal places p-values should be rounded to.
 #'
 #' @import dplyr
 #' @import tidyr
@@ -42,7 +43,7 @@
 proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
                        mean = TRUE, sd = TRUE, min = TRUE, max = TRUE,
                        median = FALSE, q1 = FALSE, q3 = FALSE, iqr = FALSE,
-                       nmiss = FALSE, nobs = FALSE, p = FALSE) {
+                       nmiss = FALSE, nobs = FALSE, p = FALSE, p_round = 4) {
 
   if(is.null(by)) p <- FALSE
 
@@ -97,7 +98,16 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
       group_by(variable) %>%
       do(broom::tidy(aov(value ~ !!quo_by, data = .))) %>%
       filter(!is.na(p.value)) %>%
-      mutate(p.value = ifelse(p.value < 0.001, "< 0.001", paste(round(p.value, 3)))) %>%
+      mutate(p.value = case_when(as.numeric(p.value) <
+                                   as.numeric(paste0("1e-", p_round)) ~
+                                   paste0("< 0.",
+                                          paste0(rep.int(0, p_round-1), collapse = ""),
+                                          "1"),
+                                 as.numeric(p.value) >=
+                                   as.numeric(paste0("1e-", p_round)) ~
+                                   format(round(as.numeric(p.value), p_round),
+                                          nsmall = p_round),
+                                 TRUE ~ NA_character_)) %>%
       select(variable, p.value) %>%
       ungroup()
   }
