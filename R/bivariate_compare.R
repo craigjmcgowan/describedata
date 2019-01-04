@@ -379,8 +379,8 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     when(!is.null(cat_vars) ~ bind_rows(.,
       df %>%
         select(one_of(cat_vars), temp_out) %>%
-        na.omit() %>%
         {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
+        na.omit() %>%
         group_by(temp_out, variable, value) %>%
         summarize(n = n()) %>%
         mutate(display = paste0(n, " (", round(n / sum(n) * 100), "%)")) %>%
