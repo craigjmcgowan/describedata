@@ -22,6 +22,8 @@
 #'   variables that will be included in the descriptive table.
 #' @param cat_vars Character vector of categorical variables that will be
 #'   included in the descriptive table.
+#' @param display_round Number of decimal places displayed values should be 
+#'   rounded to
 #' @param p Logical. Should p-values be calculated and displayed?
 #'   Default \code{TRUE}.
 #' @param p_round Number of decimal places p-values should be rounded to.
@@ -75,6 +77,7 @@
 bivariate_compare <- function(df, compare, normal_vars = NULL,
                               non_normal_vars = NULL,
                               cat_vars = NULL,
+                              display_round = 2,
                               p = TRUE,
                               p_round = 4,
                               include_na = FALSE,
@@ -220,15 +223,15 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                  q1 = quantile(value, 0.25, na.rm = T),
                  q3 = quantile(value, 0.75, na.rm = T)) %>%
        mutate(display = case_when(norm_disp == "mean" ~
-                                    paste0(round(mean, 2),
-                                           " (", round(sd, 2), ")"),
+                                    paste0(round(mean, display_round),
+                                           " (", round(sd, display_round), ")"),
                                   norm_disp == "median" ~
-                                    paste0(round(median, 2),
-                                           " (", round(iqr, 2), ")"),
+                                    paste0(round(median, display_round),
+                                           " (", round(iqr, display_round), ")"),
                                   norm_disp == "percentile" ~
-                                    paste0(round(median, 2),
-                                           " (", round(q1, 2), ", ",
-                                           round(q3, 2), ")")),
+                                    paste0(round(median, display_round),
+                                           " (", round(q1, display_round), ", ",
+                                           round(q3, display_round), ")")),
               value = NA_character_) %>%
        select(variable, value, display) %>%
        when(isTRUE(cont_n) ~
@@ -256,15 +259,15 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                   q1 = quantile(value, 0.25, na.rm = T),
                   q3 = quantile(value, 0.75, na.rm = T)) %>%
         mutate(display = case_when(non_norm_disp == "mean" ~
-                                     paste0(round(mean, 2),
-                                            " (", round(sd, 2), ")"),
+                                     paste0(round(mean, display_round),
+                                            " (", round(sd, display_round), ")"),
                                    non_norm_disp == "median" ~
-                                     paste0(round(median, 2),
-                                            " (", round(iqr, 2), ")"),
+                                     paste0(round(median, display_round),
+                                            " (", round(iqr, display_round), ")"),
                                    non_norm_disp == "percentile" ~
-                                     paste0(round(median, 2),
-                                            " (", round(q1, 2), ", ",
-                                            round(q3, 2), ")")),
+                                     paste0(round(median, display_round),
+                                            " (", round(q1, display_round), ", ",
+                                            round(q3, display_round), ")")),
                       value = NA_character_) %>%
         select(variable, value, display) %>%
         when(isTRUE(cont_n) ~
@@ -310,15 +313,15 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                   q1 = quantile(value, 0.25, na.rm = T),
                   q3 = quantile(value, 0.75, na.rm = T)) %>%
         mutate(display = case_when(norm_disp == "mean" ~
-                                     paste0(round(mean, 2),
-                                            " (", round(sd, 2), ")"),
+                                     paste0(round(mean, display_round),
+                                            " (", round(sd, display_round), ")"),
                                    norm_disp == "median" ~
-                                     paste0(round(median, 2),
-                                            " (", round(iqr, 2), ")"),
+                                     paste0(round(median, display_round),
+                                            " (", round(iqr, display_round), ")"),
                                    norm_disp == "percentile" ~
-                                     paste0(round(median, 2),
-                                            " (", round(q1, 2), ", ",
-                                            round(q3, 2), ")")),
+                                     paste0(round(median, display_round),
+                                            " (", round(q1, display_round), ", ",
+                                            round(q3, display_round), ")")),
                value = NA_character_) %>%
         select(temp_out, variable, value, display) %>%
         when(isTRUE(cont_n) ~
@@ -349,15 +352,15 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
                    q1 = quantile(value, 0.25, na.rm = T),
                    q3 = quantile(value, 0.75, na.rm = T)) %>%
          mutate(display = case_when(non_norm_disp == "mean" ~
-                                      paste0(round(mean, 2),
-                                             " (", round(sd, 2), ")"),
+                                      paste0(round(mean, display_round),
+                                             " (", round(sd, display_round), ")"),
                                     non_norm_disp == "median" ~
-                                      paste0(round(median, 2),
-                                             " (", round(iqr, 2), ")"),
+                                      paste0(round(median, display_round),
+                                             " (", round(iqr, display_round), ")"),
                                     non_norm_disp == "percentile" ~
-                                      paste0(round(median, 2),
-                                             " (", round(q1, 2), ", ",
-                                             round(q3, 2), ")")),
+                                      paste0(round(median, display_round),
+                                             " (", round(q1, display_round), ", ",
+                                             round(q3, display_round), ")")),
                 value = NA_character_) %>%
          select(temp_out, variable, value, display) %>%
          when(isTRUE(cont_n) ~

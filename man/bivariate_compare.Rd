@@ -5,10 +5,11 @@
 \title{Create publication-style table across one categorical variable}
 \usage{
 bivariate_compare(df, compare, normal_vars = NULL,
-  non_normal_vars = NULL, cat_vars = NULL, p = TRUE,
-  include_na = FALSE, cont_n = FALSE, all_cont_mean = FALSE,
-  all_cont_median = FALSE, iqr = TRUE, fisher = FALSE,
-  workspace = NULL, var_order = NULL, var_label_df = NULL)
+  non_normal_vars = NULL, cat_vars = NULL, display_round = 2,
+  p = TRUE, p_round = 4, include_na = FALSE, col_n = TRUE,
+  cont_n = FALSE, all_cont_mean = FALSE, all_cont_median = FALSE,
+  iqr = TRUE, fisher = FALSE, workspace = NULL, var_order = NULL,
+  var_label_df = NULL)
 }
 \arguments{
 \item{df}{A data.frame or tibble.}
@@ -25,11 +26,19 @@ variables that will be included in the descriptive table.}
 \item{cat_vars}{Character vector of categorical variables that will be
 included in the descriptive table.}
 
+\item{display_round}{Number of decimal places displayed values should be 
+rounded to}
+
 \item{p}{Logical. Should p-values be calculated and displayed?
 Default \code{TRUE}.}
 
+\item{p_round}{Number of decimal places p-values should be rounded to.}
+
 \item{include_na}{Logical. Should \code{NA} values be included in the
 table and accompanying statistical tests? Default \code{FALSE}.}
+
+\item{col_n}{Logical. Should the total number of observations be displayed
+for each column? Default \code{TRUE}.}
 
 \item{cont_n}{Logical. Display sample n for continuous variables in the
 table. Default \code{FALSE}.}

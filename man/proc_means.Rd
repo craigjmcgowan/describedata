@@ -7,7 +7,7 @@
 proc_means(df, vars = NULL, var_order = NULL, by = NULL, n = T,
   mean = TRUE, sd = TRUE, min = TRUE, max = TRUE, median = FALSE,
   q1 = FALSE, q3 = FALSE, iqr = FALSE, nmiss = FALSE,
-  nobs = FALSE, p = FALSE)
+  nobs = FALSE, p = FALSE, p_round = 4, display_round = 3)
 }
 \arguments{
 \item{df}{A data frame or tibble.}
@@ -47,6 +47,11 @@ each level. Default \code{NULL} provides statistics for all observations.}
 
 \item{p}{logical. Calculate p-value across \code{by} groups using \code{aov}.
 Ignored if no \code{by} variable specified. Default \code{FALSE}.}
+
+\item{p_round}{Number of decimal places p-values should be rounded to.}
+
+\item{display_round}{Number of decimal places displayed values should be 
+rounded to}
 }
 \value{
 A data.frame with columns variable, \code{by} variable, and

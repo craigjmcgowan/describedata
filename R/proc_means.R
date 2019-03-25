@@ -26,6 +26,8 @@
 #' @param p logical. Calculate p-value across \code{by} groups using \code{aov}.
 #'   Ignored if no \code{by} variable specified. Default \code{FALSE}.
 #' @param p_round Number of decimal places p-values should be rounded to.
+#' @param display_round Number of decimal places displayed values should be 
+#'   rounded to
 #'
 #' @import dplyr
 #' @import tidyr
@@ -43,7 +45,8 @@
 proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
                        mean = TRUE, sd = TRUE, min = TRUE, max = TRUE,
                        median = FALSE, q1 = FALSE, q3 = FALSE, iqr = FALSE,
-                       nmiss = FALSE, nobs = FALSE, p = FALSE, p_round = 4) {
+                       nmiss = FALSE, nobs = FALSE, p = FALSE, p_round = 4,
+                       display_round = 3) {
 
   if(is.null(by)) p <- FALSE
 
@@ -116,14 +119,14 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
   data %>%
     # Calculate all summary statistics
     summarize(N = sum(!is.na(value)),
-              Mean = round(mean(value, na.rm = TRUE), 3),
-              SD = round(sd(value, na.rm = TRUE), 3),
-              Min = round(min(value, na.rm = TRUE), 3),
-              Max = round(max(value, na.rm = TRUE), 3),
-              Median = round(median(value, na.rm = TRUE), 3),
-              Q1 = round(quantile(value, 0.25, na.rm = TRUE), 3),
-              Q3 = round(quantile(value, 0.75, na.rm = TRUE), 3),
-              IQR = round(IQR(value, na.rm = TRUE), 3),
+              Mean = round(mean(value, na.rm = TRUE), display_round),
+              SD = round(sd(value, na.rm = TRUE), display_round),
+              Min = round(min(value, na.rm = TRUE), display_round),
+              Max = round(max(value, na.rm = TRUE), display_round),
+              Median = round(median(value, na.rm = TRUE), display_round),
+              Q1 = round(quantile(value, 0.25, na.rm = TRUE), display_round),
+              Q3 = round(quantile(value, 0.75, na.rm = TRUE), display_round),
+              IQR = round(IQR(value, na.rm = TRUE), display_round),
               NMiss = sum(is.na(value)),
               NObs = n()) %>%
     # Select desired statistics to return and display
