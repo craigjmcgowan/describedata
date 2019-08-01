@@ -9,7 +9,7 @@ norm_dist_plot(df, vars)
 \arguments{
 \item{df}{A data.frame or tibble.}
 
-\item{vars}{A character vector of continous variable names.}
+\item{vars}{A character vector of continuous variable names.}
 }
 \value{
 A \code{ggplot} object.

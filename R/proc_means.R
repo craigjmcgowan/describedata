@@ -33,6 +33,8 @@
 #' @import tidyr
 #' @import haven
 #' @import purrr
+#' @importFrom rlang .data
+#' @importFrom stats aov 
 #' @export
 #' @return A data.frame with columns variable, \code{by} variable, and
 #'   a column for each summary statistic.
@@ -90,44 +92,44 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
   # Gather variables together
   data <- data %>%
     when(!is.null(by) ~ gather(., key = "variable", value = "value", -!!quo_by) %>%
-           group_by(variable, !!quo_by),
+           group_by(.data$variable, !!quo_by),
          ~ gather(., key = "variable", value = "value") %>%
-           group_by(variable)
+           group_by(.data$variable)
          )
 
   # Calculate p-values
   if(isTRUE(p)) {
     p_values <- data %>%
-      group_by(variable) %>%
+      group_by(.data$variable) %>%
       do(broom::tidy(aov(value ~ !!quo_by, data = .))) %>%
-      filter(!is.na(p.value)) %>%
-      mutate(p.value = case_when(as.numeric(p.value) <
+      filter(!is.na(.data$p.value)) %>%
+      mutate(p.value = case_when(as.numeric(.data$p.value) <
                                    as.numeric(paste0("1e-", p_round)) ~
                                    paste0("< 0.",
                                           paste0(rep.int(0, p_round-1), collapse = ""),
                                           "1"),
-                                 as.numeric(p.value) >=
+                                 as.numeric(.data$p.value) >=
                                    as.numeric(paste0("1e-", p_round)) ~
-                                   format(round(as.numeric(p.value), p_round),
+                                   format(round(as.numeric(.data$p.value), p_round),
                                           nsmall = p_round),
                                  TRUE ~ NA_character_)) %>%
-      select(variable, p.value) %>%
+      select(.data$variable, .data$p.value) %>%
       ungroup()
   }
 
   # Calculate summary statistics and return requested stats
   data %>%
     # Calculate all summary statistics
-    summarize(N = sum(!is.na(value)),
-              Mean = round(mean(value, na.rm = TRUE), display_round),
-              SD = round(sd(value, na.rm = TRUE), display_round),
-              Min = round(min(value, na.rm = TRUE), display_round),
-              Max = round(max(value, na.rm = TRUE), display_round),
-              Median = round(median(value, na.rm = TRUE), display_round),
-              Q1 = round(quantile(value, 0.25, na.rm = TRUE), display_round),
-              Q3 = round(quantile(value, 0.75, na.rm = TRUE), display_round),
-              IQR = round(IQR(value, na.rm = TRUE), display_round),
-              NMiss = sum(is.na(value)),
+    summarize(N = sum(!is.na(.data$value)),
+              Mean = round(mean(.data$value, na.rm = TRUE), display_round),
+              SD = round(sd(.data$value, na.rm = TRUE), display_round),
+              Min = round(min(.data$value, na.rm = TRUE), display_round),
+              Max = round(max(.data$value, na.rm = TRUE), display_round),
+              Median = round(median(.data$value, na.rm = TRUE), display_round),
+              Q1 = round(quantile(.data$value, 0.25, na.rm = TRUE), display_round),
+              Q3 = round(quantile(.data$value, 0.75, na.rm = TRUE), display_round),
+              IQR = round(IQR(.data$value, na.rm = TRUE), display_round),
+              NMiss = sum(is.na(.data$value)),
               NObs = n()) %>%
     # Select desired statistics to return and display
     when(!isTRUE(n) ~ select(., -N),
@@ -153,11 +155,11 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
     when(!isTRUE(nobs) ~ select(., -NObs),
          ~ select(., everything())) %>%
     when(isTRUE(p) ~ left_join(., p_values, by = "variable") %>%
-           mutate(p.value = ifelse(row_number() == 1, p.value, "")),
+           mutate(p.value = ifelse(row_number() == 1, .data$p.value, "")),
          ~ select(., everything())) %>%
     ungroup() %>%
     # Arrange display results
-    mutate(variable = factor(variable, levels = var_order)) %>%
-    arrange(variable)
+    mutate(variable = factor(.data$variable, levels = var_order)) %>%
+    arrange(.data$variable)
 
 }

@@ -8,6 +8,7 @@
 #'   removed?)
 #'
 #' @import dplyr
+#' @importFrom rlang := 
 #' @export
 #' @return A data.frame with columns \code{var}, NObs, and Percent
 #'

@@ -1,4 +1,4 @@
 library(testthat)
-library(helpR)
+library(describedata)
 
-test_check("helpR")
+test_check("describedata")

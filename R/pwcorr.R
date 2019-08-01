@@ -6,6 +6,9 @@
 #'
 #' @import dplyr
 #' @import tidyr
+#' @importFrom rlang .data
+#' @importFrom stats cor
+#' @importFrom stats pf
 #'
 #' @return A data.frame with columns h_var, v_var, and p.value
 #'
@@ -30,8 +33,8 @@ cor.prob <- function(df) {
 
   cor.mat %>%
     as.data.frame() %>%
-    rownames_to_column(var = "h_var") %>%
-    gather(key = "v_var", value = "p.value", -h_var)
+    tibble::rownames_to_column(var = "h_var") %>%
+    gather(key = "v_var", value = "p.value", -.data$h_var)
 }
 
 #' Replica of Stata's pwcorr function
@@ -51,6 +54,7 @@ cor.prob <- function(df) {
 #'
 #' @import dplyr
 #' @import tidyr
+#' @importFrom rlang .data
 #' @export
 #'
 #' @return A data.frame displaying the pairwise correlation coefficients
@@ -81,27 +85,27 @@ pwcorr <- function(df, vars = NULL, method = "pearson", var_label_df = NULL) {
 
   display <- cor.matrix %>%
     as.data.frame() %>%
-    rownames_to_column(var = "h_var") %>%
+    tibble::rownames_to_column(var = "h_var") %>%
     mutate_if(is.numeric, round, 3)
 
   if(method == "pearson") {
     display <- display %>%
-      gather(key = "v_var", value = "corr", -h_var) %>%
-      left_join(describedata:::cor.prob(df), by = c("h_var", "v_var")) %>%
-      mutate(p.disp = case_when(p.value < 0.01 ~ "<0.01",
-                                 is.na(p.value) ~ NA_character_,
-                                 TRUE ~ paste(round(p.value, 2))),
-             display = case_when(!is.na(corr) & !is.na(p.disp) ~
-                                   paste0(round(corr, 2), "\n(", p.disp, ")"),
-                                 corr == 1 & is.na(p.disp) ~ "1",
-                                 is.na(corr) & is.na(p.disp) ~ " ",
+      gather(key = "v_var", value = "corr", -.data$h_var) %>%
+      left_join(cor.prob(df), by = c("h_var", "v_var")) %>%
+      mutate(p.disp = case_when(.data$p.value < 0.01 ~ "<0.01",
+                                 is.na(.data$p.value) ~ NA_character_,
+                                 TRUE ~ paste(round(.data$p.value, 2))),
+             display = case_when(!is.na(.data$corr) & !is.na(.data$p.disp) ~
+                                   paste0(round(.data$corr, 2), "\n(", .data$p.disp, ")"),
+                                 .data$corr == 1 & is.na(.data$p.disp) ~ "1",
+                                 is.na(.data$corr) & is.na(.data$p.disp) ~ " ",
                                  TRUE ~ NA_character_)) %>%
-      select(h_var, v_var, display) %>%
-      mutate(h_var = factor(h_var, levels = vars, labels = labels),
-             v_var = factor(v_var, levels = vars, labels = labels)) %>%
-      arrange(h_var, v_var) %>%
+      select(.data$h_var, .data$v_var, .data$display) %>%
+      mutate(h_var = factor(.data$h_var, levels = vars, labels = labels),
+             v_var = factor(.data$v_var, levels = vars, labels = labels)) %>%
+      arrange(.data$h_var, .data$v_var) %>%
       spread(key = "v_var", value = "display") %>%
-      rename(" " = h_var)
+      rename(" " = .data$h_var)
   }
 
   return(display)

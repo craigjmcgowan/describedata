@@ -43,7 +43,7 @@ for each column? Default \code{TRUE}.}
 \item{cont_n}{Logical. Display sample n for continuous variables in the
 table. Default \code{FALSE}.}
 
-\item{all_cont_mean}{Logical. Display mean (sd) for all continous variables.
+\item{all_cont_mean}{Logical. Display mean (sd) for all continuous variables.
 Default \code{FALSE} results in mean (sd) for normally distributed variables
 and median (IQR) for non-normally distributed variables. Must be
 \code{FALSE} if \code{all_cont_median == TRUE}.}
@@ -53,8 +53,8 @@ Default \code{FALSE} results in mean (sd) for normally distributed variables
 and median (IQR) for non-normally distributed variables. Must be
 \code{FALSE} if \code{all_cont_mean == TRUE}.}
 
-\item{iqr}{Logical. If the median is displayed for a continous variable, should
-inter-quartile range be displayed as well (\code{TRUE}), or should the values
+\item{iqr}{Logical. If the median is displayed for a continuous variable, should
+interquartile range be displayed as well (\code{TRUE}), or should the values
 for the 25th and 75th percentiles be displayed (\code{FALSE})? Default
 \code{TRUE}}
 
@@ -77,12 +77,12 @@ variables are displayed first, followed by categorical variables.}
 A data.frame with columns label, overall, a column for each level
   of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is
   displayed, for \code{non_normal_vars} median (IQR) is displayed, and for
-  \code{cat_vars} n (percent) is displayed. For p values on continous
+  \code{cat_vars} n (percent) is displayed. For p values on continuous
   variables, a superscript 'a' denotes the Kruskal-Wallis test was used
 }
 \description{
 Descriptive statistics for categorical variables as well as normally and
-non-normally distributed continiuous variables, split across levels of
+non-normally distributed continuous variables, split across levels of
 a categorical variable. Depending on the variable type, an appropriate
 statistical test is used to assess differences across levels of the
 comparison variable.

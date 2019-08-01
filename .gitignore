@@ -36,5 +36,3 @@ vignettes/*.pdf
 *.log
 *.synctex.gz
 
-# README Rmarkdown file
-README.Rmd

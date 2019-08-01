@@ -1,5 +1,5 @@
 Package: describedata
-Title: Miscellaneous descriptive and SAS/Stata duplicate functions
+Title: Miscellaneous Descriptive Functions
 Version: 0.1.0
 Authors@R: person("Craig", "McGowan", email = "mcgowan.cj@gmail.com",
   role = c("aut", "cre"))
@@ -9,6 +9,8 @@ Description:
   of some common, useful SAS/Stata functions.
 Imports:
   dplyr (>= 0.7),
+  forcats,
+  tibble,
   tidyr,
   purrr,
   broom,

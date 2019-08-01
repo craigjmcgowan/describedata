@@ -1,7 +1,7 @@
 #' Create publication-style table across one categorical variable
 #'
 #' Descriptive statistics for categorical variables as well as normally and
-#' non-normally distributed continiuous variables, split across levels of
+#' non-normally distributed continuous variables, split across levels of
 #' a categorical variable. Depending on the variable type, an appropriate
 #' statistical test is used to assess differences across levels of the
 #' comparison variable.
@@ -33,7 +33,7 @@
 #'   for each column? Default \code{TRUE}.
 #' @param cont_n Logical. Display sample n for continuous variables in the
 #'   table. Default \code{FALSE}.
-#' @param all_cont_mean Logical. Display mean (sd) for all continous variables.
+#' @param all_cont_mean Logical. Display mean (sd) for all continuous variables.
 #'   Default \code{FALSE} results in mean (sd) for normally distributed variables
 #'   and median (IQR) for non-normally distributed variables. Must be
 #'   \code{FALSE} if \code{all_cont_median == TRUE}.
@@ -41,8 +41,8 @@
 #'   Default \code{FALSE} results in mean (sd) for normally distributed variables
 #'   and median (IQR) for non-normally distributed variables. Must be
 #'   \code{FALSE} if \code{all_cont_mean == TRUE}.
-#' @param iqr Logical. If the median is displayed for a continous variable, should
-#'   inter-quartile range be displayed as well (\code{TRUE}), or should the values
+#' @param iqr Logical. If the median is displayed for a continuous variable, should
+#'   interquartile range be displayed as well (\code{TRUE}), or should the values
 #'   for the 25th and 75th percentiles be displayed (\code{FALSE})? Default
 #'   \code{TRUE}
 #' @param fisher Logical. Should Fisher's exact test be used for categorical
@@ -62,11 +62,16 @@
 #' @import tidyr
 #' @import purrr
 #' @import broom
+#' @import forcats
+#' @importFrom stats median sd aov fisher.test chisq.test kruskal.test quantile IQR na.omit
+#' @importFrom rlang .data
+#' 
+#' 
 #' @export
 #' @return A data.frame with columns label, overall, a column for each level
 #'   of \code{compare}, and p.value. For \code{normal_vars}, mean (SD) is
 #'   displayed, for \code{non_normal_vars} median (IQR) is displayed, and for
-#'   \code{cat_vars} n (percent) is displayed. For p values on continous
+#'   \code{cat_vars} n (percent) is displayed. For p values on continuous
 #'   variables, a superscript 'a' denotes the Kruskal-Wallis test was used
 #'
 #' @examples
@@ -126,12 +131,12 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     when(!is.null(cat_vars) ~
            mutate_at(., vars(one_of(cat_vars)), as.factor),
          ~ select(., everything())) %>%
-    select(temp_out, one_of(normal_vars, non_normal_vars, cat_vars))
+    select(.data$temp_out, one_of(normal_vars, non_normal_vars, cat_vars))
 
 
   if (isTRUE(include_na)) {
     df <- df %>%
-      mutate(temp_out = forcats::fct_explicit_na(temp_out)) %>%
+      mutate(temp_out = forcats::fct_explicit_na(.data$temp_out)) %>%
       when(!is.null(cat_vars) ~
              mutate_at(., vars(one_of(cat_vars)), forcats::fct_explicit_na),
            ~ select(., everything()))
@@ -144,13 +149,13 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
       when(!is.null(cat_vars) ~ bind_rows(.,
         df %>%
           # Remove missing outcomes for p-value calcs
-          filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
+          filter(.data$temp_out != "(Missing)", !is.na(.data$temp_out)) %>%
           mutate_at(vars(one_of(cat_vars)), as.character) %>%
-          select(one_of(cat_vars), temp_out) %>%
+          select(one_of(cat_vars), .data$temp_out) %>%
           {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
           # Remove missing values for p-value calcs
-          filter(value != "(Missing)", !is.na(value)) %>%
-          group_by(variable) %>%
+          filter(value != "(Missing)", !is.na(.data$value)) %>%
+          group_by(.data$variable) %>%
           when(
             !isTRUE(fisher) ~ do(., tidy(chisq.test(.$temp_out, .$value))),
             isTRUE(fisher) & is.null(workspace) ~
@@ -164,12 +169,12 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
       when(!is.null(non_normal_vars) ~ bind_rows(.,
         df %>%
           # Remove missing outcomes for p-value calcs
-          filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
-          select(temp_out, one_of(non_normal_vars)) %>%
+          filter(.data$temp_out != "(Missing)", !is.na(.data$temp_out)) %>%
+          select(.data$temp_out, one_of(non_normal_vars)) %>%
           {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
           # Remove missing values for p-value calcs
-          filter(!is.na(value)) %>%
-          group_by(variable) %>%
+          filter(!is.na(.data$value)) %>%
+          group_by(.data$variable) %>%
           do(tidy(kruskal.test(value ~ temp_out,
                                data = .))) %>%
           ungroup() %>%
@@ -179,34 +184,34 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
       when(!is.null(normal_vars) ~ bind_rows(.,
         df %>%
           # Remove missing outcomes for p-value calcs
-          filter(temp_out != "(Missing)", !is.na(temp_out)) %>%
-          select(temp_out, one_of(normal_vars)) %>%
+          filter(.data$temp_out != "(Missing)", !is.na(.data$temp_out)) %>%
+          select(.data$temp_out, one_of(normal_vars)) %>%
           {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
           # Remove missing values for p-value calcs
-          filter(!is.na(value)) %>%
-          group_by(variable) %>%
+          filter(!is.na(.data$value)) %>%
+          group_by(.data$variable) %>%
           do(tidy(aov(value ~ temp_out, data = .)) %>%
                filter(grepl("temp_out", term))) %>%
           ungroup() %>%
           mutate_all(as.character)),
         ~ bind_rows(., tibble())) %>%
-      select(variable, p.value) %>%
-      mutate(p.value = case_when(as.numeric(p.value) <
+      select(.data$variable, .data$p.value) %>%
+      mutate(p.value = case_when(as.numeric(.data$p.value) <
                                    as.numeric(paste0("1e-", p_round)) ~
                                    paste0("< 0.",
                                           paste0(rep.int(0, p_round-1), collapse = ""),
                                           "1"),
-                                 as.numeric(p.value) >=
+                                 as.numeric(.data$p.value) >=
                                    as.numeric(paste0("1e-", p_round)) ~
-                                   format(round(as.numeric(p.value), p_round),
+                                   format(round(as.numeric(.data$p.value), p_round),
                                           nsmall = p_round),
                                  TRUE ~ NA_character_),
-             p.value = case_when(variable %in% non_normal_vars ~
-                                   paste0(p.value, "^a^"),
-                                 TRUE ~ p.value))
+             p.value = case_when(.data$variable %in% non_normal_vars ~
+                                   paste0(.data$p.value, "^a^"),
+                                 TRUE ~ .data$p.value))
   } else {
     p_values <- tibble(variable = c(cat_vars, normal_vars, non_normal_vars),
-                       p.value = rep(" ", length(variable)))
+                       p.value = rep(" ", length(.data$variable)))
   }
 
   overall <- tibble() %>%
@@ -215,72 +220,72 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
      df %>%
        select(one_of(c(normal_vars))) %>%
        {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
-       group_by(variable) %>%
-       summarize(mean = mean(value, na.rm = T),
-                 sd = sd(value, na.rm = T),
-                 median = median(value, na.rm = T),
-                 iqr = IQR(value, na.rm = T),
-                 q1 = quantile(value, 0.25, na.rm = T),
-                 q3 = quantile(value, 0.75, na.rm = T)) %>%
+       group_by(.data$variable) %>%
+       summarize(mean = mean(.data$value, na.rm = T),
+                 sd = sd(.data$value, na.rm = T),
+                 median = median(.data$value, na.rm = T),
+                 iqr = IQR(.data$value, na.rm = T),
+                 q1 = quantile(.data$value, 0.25, na.rm = T),
+                 q3 = quantile(.data$value, 0.75, na.rm = T)) %>%
        mutate(display = case_when(norm_disp == "mean" ~
-                                    paste0(round(mean, display_round),
-                                           " (", round(sd, display_round), ")"),
+                                    paste0(round(.data$mean, display_round),
+                                           " (", round(.data$sd, display_round), ")"),
                                   norm_disp == "median" ~
-                                    paste0(round(median, display_round),
-                                           " (", round(iqr, display_round), ")"),
+                                    paste0(round(.data$median, display_round),
+                                           " (", round(.data$iqr, display_round), ")"),
                                   norm_disp == "percentile" ~
-                                    paste0(round(median, display_round),
-                                           " (", round(q1, display_round), ", ",
-                                           round(q3, display_round), ")")),
+                                    paste0(round(.data$median, display_round),
+                                           " (", round(.data$q1, display_round), ", ",
+                                           round(.data$q3, display_round), ")")),
               value = NA_character_) %>%
-       select(variable, value, display) %>%
+       select(.data$variable, .data$value, .data$display) %>%
        when(isTRUE(cont_n) ~
               bind_rows(.,
                         df %>%
-                          filter(!is.na(temp_out)) %>%
+                          filter(!is.na(.data$temp_out)) %>%
                           select(one_of(c(normal_vars))) %>%
                           {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
-                          group_by(variable) %>%
-                          summarize(n = n() - sum(is.na(value))) %>%
-                          mutate(display = paste0(n),
+                          group_by(.data$variable) %>%
+                          summarize(n = n() - sum(is.na(.data$value))) %>%
+                          mutate(display = paste0(.data$n),
                                  value = "n") %>%
-                          select(variable, value, display)),
+                          select(.data$variable, .data$value, .data$display)),
             ~ select(., everything()))),
       ~ bind_rows(., tibble())) %>%
     when(!is.null(c(non_normal_vars)) ~ bind_rows(.,
       df %>%
         select(one_of(c(non_normal_vars))) %>%
         {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
-        group_by(variable) %>%
-        summarize(mean = mean(value, na.rm = T),
-                  sd = sd(value, na.rm = T),
-                  median = median(value, na.rm = T),
-                  iqr = IQR(value, na.rm = T),
-                  q1 = quantile(value, 0.25, na.rm = T),
-                  q3 = quantile(value, 0.75, na.rm = T)) %>%
+        group_by(.data$variable) %>%
+        summarize(mean = mean(.data$value, na.rm = T),
+                  sd = sd(.data$value, na.rm = T),
+                  median = median(.data$value, na.rm = T),
+                  iqr = IQR(.data$value, na.rm = T),
+                  q1 = quantile(.data$value, 0.25, na.rm = T),
+                  q3 = quantile(.data$value, 0.75, na.rm = T)) %>%
         mutate(display = case_when(non_norm_disp == "mean" ~
-                                     paste0(round(mean, display_round),
-                                            " (", round(sd, display_round), ")"),
+                                     paste0(round(.data$mean, display_round),
+                                            " (", round(.data$sd, display_round), ")"),
                                    non_norm_disp == "median" ~
-                                     paste0(round(median, display_round),
-                                            " (", round(iqr, display_round), ")"),
+                                     paste0(round(.data$median, display_round),
+                                            " (", round(.data$iqr, display_round), ")"),
                                    non_norm_disp == "percentile" ~
-                                     paste0(round(median, display_round),
-                                            " (", round(q1, display_round), ", ",
-                                            round(q3, display_round), ")")),
+                                     paste0(round(.data$median, display_round),
+                                            " (", round(.data$q1, display_round), ", ",
+                                            round(.data$q3, display_round), ")")),
                       value = NA_character_) %>%
-        select(variable, value, display) %>%
+        select(.data$variable, .data$value, .data$display) %>%
         when(isTRUE(cont_n) ~
                bind_rows(.,
                          df %>%
-                           filter(!is.na(temp_out)) %>%
+                           filter(!is.na(.data$temp_out)) %>%
                            select(one_of(c(non_normal_vars))) %>%
                            {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
-                           group_by(variable) %>%
-                           summarize(n = n() - sum(is.na(value))) %>%
-                           mutate(display = paste0(n),
+                           group_by(.data$variable) %>%
+                           summarize(n = n() - sum(is.na(.data$value))) %>%
+                           mutate(display = paste0(.data$n),
                                   value = "n") %>%
-                           select(variable, value, display)),
+                           select(.data$variable, .data$value, .data$display)),
              ~ select(., everything()))),
       ~ bind_rows(., tibble())) %>%
     # Categorical variable summaries
@@ -290,10 +295,10 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
         {suppressWarnings(gather(., key = "variable", value = "value"))} %>%
         # Remove missings - if include_na = TRUE then there should be no NA
         na.omit() %>%
-        group_by(variable, value) %>%
+        group_by(.data$variable, .data$value) %>%
         summarize(n = n()) %>%
-        mutate(display = paste0(n, " (", round(n / sum(n) * 100), "%)")) %>%
-        select(variable, value, display)),
+        mutate(display = paste0(.data$n, " (", round(.data$n / sum(.data$n) * 100), "%)")) %>%
+        select(.data$variable, .data$value, .data$display)),
       ~ bind_rows(., tibble())) %>%
     ungroup() %>%
     mutate_all(as.character)
@@ -302,92 +307,92 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
     # Continuous variable summaries
     when(!is.null(c(normal_vars)) ~ bind_rows(.,
       df %>%
-        select(temp_out,
+        select(.data$temp_out,
                one_of(c(normal_vars))) %>%
         {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
-        group_by(temp_out, variable) %>%
-        summarize(mean = mean(value, na.rm = T),
-                  sd = sd(value, na.rm = T),
-                  median = median(value, na.rm = T),
-                  iqr = IQR(value, na.rm = T),
-                  q1 = quantile(value, 0.25, na.rm = T),
-                  q3 = quantile(value, 0.75, na.rm = T)) %>%
+        group_by(.data$temp_out, .data$variable) %>%
+        summarize(mean = mean(.data$value, na.rm = T),
+                  sd = sd(.data$value, na.rm = T),
+                  median = median(.data$value, na.rm = T),
+                  iqr = IQR(.data$value, na.rm = T),
+                  q1 = quantile(.data$value, 0.25, na.rm = T),
+                  q3 = quantile(.data$value, 0.75, na.rm = T)) %>%
         mutate(display = case_when(norm_disp == "mean" ~
-                                     paste0(round(mean, display_round),
-                                            " (", round(sd, display_round), ")"),
+                                     paste0(round(.data$mean, display_round),
+                                            " (", round(.data$sd, display_round), ")"),
                                    norm_disp == "median" ~
-                                     paste0(round(median, display_round),
-                                            " (", round(iqr, display_round), ")"),
+                                     paste0(round(.data$median, display_round),
+                                            " (", round(.data$iqr, display_round), ")"),
                                    norm_disp == "percentile" ~
-                                     paste0(round(median, display_round),
-                                            " (", round(q1, display_round), ", ",
-                                            round(q3, display_round), ")")),
+                                     paste0(round(.data$median, display_round),
+                                            " (", round(.data$q1, display_round), ", ",
+                                            round(.data$q3, display_round), ")")),
                value = NA_character_) %>%
-        select(temp_out, variable, value, display) %>%
+        select(.data$temp_out, .data$variable, .data$value, .data$display) %>%
         when(isTRUE(cont_n) ~
                bind_rows(.,
                          df %>%
-                           filter(!is.na(temp_out)) %>%
-                           select(temp_out,
+                           filter(!is.na(.data$temp_out)) %>%
+                           select(.data$temp_out,
                                   one_of(c(normal_vars))) %>%
-                                  {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
-                           group_by(temp_out, variable) %>%
-                           summarize(n = n() - sum(is.na(value))) %>%
-                           mutate(display = paste0(n),
+                           {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
+                           group_by(.data$temp_out, .data$variable) %>%
+                           summarize(n = n() - sum(is.na(.data$value))) %>%
+                           mutate(display = paste0(.data$n),
                                   value = "n") %>%
-                           select(temp_out, variable, value, display)),
+                           select(.data$temp_out, .data$variable, .data$value, .data$display)),
              ~ select(., everything())) %>%
         spread(key = temp_out, value = "display")),
       ~ bind_rows(., tibble())) %>%
     when(!is.null(c(non_normal_vars)) ~ bind_rows(.,
        df %>%
-         select(temp_out,
+         select(.data$temp_out,
                 one_of(c(non_normal_vars))) %>%
          {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
-         group_by(temp_out, variable)%>%
-         summarize(mean = mean(value, na.rm = T),
-                   sd = sd(value, na.rm = T),
-                   median = median(value, na.rm = T),
-                   iqr = IQR(value, na.rm = T),
-                   q1 = quantile(value, 0.25, na.rm = T),
-                   q3 = quantile(value, 0.75, na.rm = T)) %>%
+         group_by(.data$temp_out, .data$variable)%>%
+         summarize(mean = mean(.data$value, na.rm = T),
+                   sd = sd(.data$value, na.rm = T),
+                   median = median(.data$value, na.rm = T),
+                   iqr = IQR(.data$value, na.rm = T),
+                   q1 = quantile(.data$value, 0.25, na.rm = T),
+                   q3 = quantile(.data$value, 0.75, na.rm = T)) %>%
          mutate(display = case_when(non_norm_disp == "mean" ~
-                                      paste0(round(mean, display_round),
-                                             " (", round(sd, display_round), ")"),
+                                      paste0(round(.data$mean, display_round),
+                                             " (", round(.data$sd, display_round), ")"),
                                     non_norm_disp == "median" ~
-                                      paste0(round(median, display_round),
-                                             " (", round(iqr, display_round), ")"),
+                                      paste0(round(.data$median, display_round),
+                                             " (", round(.data$iqr, display_round), ")"),
                                     non_norm_disp == "percentile" ~
-                                      paste0(round(median, display_round),
-                                             " (", round(q1, display_round), ", ",
-                                             round(q3, display_round), ")")),
+                                      paste0(round(.data$median, display_round),
+                                             " (", round(.data$q1, display_round), ", ",
+                                             round(.data$q3, display_round), ")")),
                 value = NA_character_) %>%
-         select(temp_out, variable, value, display) %>%
+         select(.data$temp_out, .data$variable, .data$value, .data$display) %>%
          when(isTRUE(cont_n) ~
                 bind_rows(.,
                           df %>%
-                            filter(!is.na(temp_out)) %>%
-                            select(temp_out,
+                            filter(!is.na(.data$temp_out)) %>%
+                            select(.data$temp_out,
                                    one_of(c(non_normal_vars))) %>%
-                                   {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
-                            group_by(temp_out, variable) %>%
-                            summarize(n = n() - sum(is.na(value))) %>%
-                            mutate(display = paste0(n),
+                            {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
+                            group_by(.data$temp_out, .data$variable) %>%
+                            summarize(n = n() - sum(is.na(.data$value))) %>%
+                            mutate(display = paste0(.data$n),
                                    value = "n") %>%
-                            select(temp_out, variable, value, display)),
+                            select(.data$temp_out, .data$variable, .data$value, .data$display)),
               ~ select(., everything())) %>%
          spread(key = temp_out, value = "display")),
          ~ bind_rows(., tibble())) %>%
     # Categorical variable summaries
     when(!is.null(cat_vars) ~ bind_rows(.,
       df %>%
-        select(one_of(cat_vars), temp_out) %>%
+        select(one_of(cat_vars), .data$temp_out) %>%
         {suppressWarnings(gather(., key = "variable", value = "value", -temp_out))} %>%
         na.omit() %>%
-        group_by(temp_out, variable, value) %>%
+        group_by(.data$temp_out, .data$variable, .data$value) %>%
         summarize(n = n()) %>%
-        mutate(display = paste0(n, " (", round(n / sum(n) * 100), "%)")) %>%
-        select(temp_out, variable, value, display) %>%
+        mutate(display = paste0(.data$n, " (", round(.data$n / sum(.data$n) * 100), "%)")) %>%
+        select(.data$temp_out, .data$variable, .data$value, .data$display) %>%
         spread(key = temp_out, value = "display", fill = "0 (0%)")),
       ~ bind_rows(., tibble()))  %>%
     ungroup() %>%
@@ -422,9 +427,9 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
       when(var_order[i],
            . %in% cat_vars ~
              filter(display_temp, variable == .) %>%
-             mutate(value = factor(value,
+             mutate(value = factor(.data$value,
                                    levels = levels(pull(df, var_order[i])))) %>%
-             arrange(value) %>%
+             arrange(.data$value) %>%
              mutate_all(as.character),
            . %in% c(normal_vars, non_normal_vars) ~
              filter(display_temp, variable == var_order[i]),
@@ -435,25 +440,25 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
 
   # Remove duplicate values for final printing - make it pretty.
   display <- display %>%
-    group_by(variable) %>%
-    mutate(., p.value = ifelse(row_number(variable) == 1,
-                                                p.value, " ")) %>%
+    group_by(.data$variable) %>%
+    mutate(., p.value = ifelse(row_number(.data$variable) == 1,
+                               .data$p.value, " ")) %>%
     # Add variable labels if provided, otherwise return variable name
     when(!is.null(var_label_df) ~
            left_join(., var_label_df, by = c("variable")) %>%
-           mutate(label = ifelse(row_number(variable) == 1, label, " "),
-                  label = case_when(!is.na(value) ~ paste(label, value, sep = " - "),
-                                    is.na(value) ~ paste0(label),
+           mutate(label = ifelse(row_number(.data$variable) == 1, label, " "),
+                  label = case_when(!is.na(.data$value) ~ paste(.data$label, .data$value, sep = " - "),
+                                    is.na(.data$value) ~ paste0(.data$label),
                                     TRUE ~ NA_character_)) %>%
            ungroup() %>%
-           select(label, "Overall" = display, one_of(levels(df$temp_out)), p.value),
-         ~ mutate(., var = ifelse(row_number(variable) == 1,
-                                 as.character(variable), " "),
-                    var = case_when(!is.na(value) ~ paste(var, value, sep = " - "),
-                                    is.na(value) ~ paste0(var),
+           select(.data$label, "Overall" = display, one_of(levels(df$temp_out)), p.value),
+         ~ mutate(., var = ifelse(row_number(.data$variable) == 1,
+                                 as.character(.data$variable), " "),
+                    var = case_when(!is.na(.data$value) ~ paste(.data$var, .data$value, sep = " - "),
+                                    is.na(.data$value) ~ paste0(.data$var),
                                     TRUE ~ NA_character_)) %>%
            ungroup() %>%
-           select(var, "Overall" = display,
+           select(.data$var, "Overall" = display,
                   one_of(levels(df$temp_out)), p.value)) %>%
     # Remove p.value if not requested
     when(isTRUE(p) ~ select(., everything()),
@@ -463,10 +468,10 @@ bivariate_compare <- function(df, compare, normal_vars = NULL,
   # Add total N to column headers
   if (isTRUE(col_n)){
     n <- df %>%
-      group_by(temp_out) %>%
+      group_by(.data$temp_out) %>%
       summarize(n = n()) %>%
-      filter(!is.na(temp_out)) %>%
-      arrange(temp_out)
+      filter(!is.na(.data$temp_out)) %>%
+      arrange(.data$temp_out)
 
     display <- display %>%
       rename_at("Overall", function(x) paste0(x, " (n = ", sum(n$n), ")")) %>%

@@ -9,6 +9,7 @@
 #'   specified.
 #'
 #' @import dplyr
+#' @importFrom rlang .data
 #' @export
 #' @return A data.frame with columns Exclusion, 'Sequential Excluded', and
 #'   'Total Excluded' for display.
@@ -38,7 +39,7 @@ sample_flow <- function(df, exclusions = c()) {
       seq_excl,
       tibble(Exclusion = exclusions[i],
              N = nrow(filter(seq_excl_df, !eval(parse(text = exclusions[i])))),
-             `Sequential Excluded` = nrow(seq_excl_df) - N)
+             `Sequential Excluded` = nrow(seq_excl_df) - .data$N)
     )
 
     # Update exclusion df for next iteration
@@ -48,7 +49,7 @@ sample_flow <- function(df, exclusions = c()) {
   }
 
   left_join(seq_excl, all_excl, by = "Exclusion") %>%
-    mutate(Exclusion = factor(Exclusion, levels = exclusions)) %>%
-    arrange(Exclusion)
+    mutate(Exclusion = factor(.data$Exclusion, levels = exclusions)) %>%
+    arrange(.data$Exclusion)
 
 }

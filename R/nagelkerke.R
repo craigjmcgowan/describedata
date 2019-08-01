@@ -6,6 +6,8 @@
 #'   The model must have been fit using the \code{data} option, in order to
 #'   extract the data from the model object.
 #'
+#' @importFrom stats logLik nobs terms update na.omit
+#'
 #' @export
 #' @return Numeric value of Nagelkerke r-squared for the model
 #'

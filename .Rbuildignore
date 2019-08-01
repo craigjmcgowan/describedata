@@ -2,3 +2,6 @@
 ^\.Rproj\.user$
 ^data-raw/$
 ^Rtmp/$
+cran-comments.md
+^README\.Rmd$
+^LICENSE\.md$

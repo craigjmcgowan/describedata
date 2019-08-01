@@ -11,6 +11,9 @@
 #' @import dplyr
 #' @import broom
 #' @import tidyr
+#' @importFrom rlang .data
+#' @importFrom stats shapiro.test
+#' 
 #' @export
 #' @return A data.frame 
 #'   
@@ -18,6 +21,7 @@
 #' ladder(iris$Sepal.Length)
 #' ladder(mtcars$disp)
 #'
+
 ladder <- function(x) {
   
   order <- c("cubic", "square", "identity", "sqrt", "log", "1/sqrt",
@@ -28,19 +32,19 @@ ladder <- function(x) {
          square = identity^2,
          sqrt = sqrt(identity),
          log = log(identity),
-         `1/sqrt` = 1/sqrt,
-         inverse = 1/identity,
-         `1/square` = 1/square,
-         `1/cubic` = 1/cubic) %>%
+         `1/sqrt` = 1/.data$sqrt,
+         inverse = 1/.data$identity,
+         `1/square` = 1/.data$square,
+         `1/cubic` = 1/.data$cubic) %>%
     gather(key = "Transformation", value = "value") %>%
-    filter(!is.na(value)) %>%
-    group_by(Transformation) %>%
+    filter(!is.na(.data$value)) %>%
+    group_by(.data$Transformation) %>%
     do(tidy(shapiro.test(x = .$value))) %>%
     ungroup() %>%
-    mutate(Transformation = factor(Transformation, 
+    mutate(Transformation = factor(.data$Transformation, 
                                    levels = order)) %>%
-    arrange(Transformation) %>%
-    select(-method)
+    arrange(.data$Transformation) %>%
+    select(-.data$method)
 }
 
 
@@ -56,6 +60,9 @@ ladder <- function(x) {
 #' @import dplyr
 #' @import ggplot2
 #' @import tidyr
+#' @importFrom rlang .data
+#' @importFrom stats dnorm sd
+#' 
 #' @export
 #' @return A ggplot object with plots of each transformation
 #'   
@@ -70,30 +77,30 @@ gladder <- function(x) {
              "inverse", "1/square", "1/cubic")
   
   tibble(var = x) %>%
-    mutate(identity = var,
+    mutate(identity = .data$var,
            cubic = identity^3,
            square = identity^2,
            sqrt = sqrt(identity),
            log = log(identity),
-           `1/sqrt` = 1/sqrt,
-           inverse = 1/identity,
-           `1/square` = 1/square,
-           `1/cubic` = 1/cubic) %>%
-    select(-var) %>%
+           `1/sqrt` = 1/.data$sqrt,
+           inverse = 1/.data$identity,
+           `1/square` = 1/.data$square,
+           `1/cubic` = 1/.data$cubic) %>%
+    select(-.data$var) %>%
     gather(key = "Transformation", value = "value") %>%
-    filter(!is.na(value)) %>%
-    mutate(Transformation = factor(Transformation, 
+    filter(!is.na(.data$value)) %>%
+    mutate(Transformation = factor(.data$Transformation, 
                                    levels = order)) %>%
-    arrange(Transformation, value) %>%
-    group_by(Transformation) %>%
+    arrange(.data$Transformation, .data$value) %>%
+    group_by(.data$Transformation) %>%
     # Create density to overlay
-    mutate(grid = seq(min(value), max(value), length = n()),
-           density = dnorm(grid, mean(value), sd(value))) %>%
+    mutate(grid = seq(min(.data$value), max(.data$value), length = n()),
+           density = dnorm(.data$grid, mean(.data$value), sd(.data$value))) %>%
     # Plot histogram and density on density scale - need to try and fix if possible
-    ggplot(aes(value)) +
-    geom_histogram(aes(y = ..density..), bins = 20) +
-    geom_line(aes(grid, density), col = "red") +
-    facet_wrap(~ Transformation, scales = "free") +
+    ggplot(aes(.data$value)) +
+    geom_histogram(aes(y = .data$..density..), bins = 20) +
+    geom_line(aes(.data$grid, .data$density), col = "red") +
+    facet_wrap(~ .data$Transformation, scales = "free") +
     labs(x = "Value",
          y = "Fraction") +
     theme_bw()
