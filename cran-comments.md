@@ -6,7 +6,7 @@
 0 ERRORS, 0 WARNINGS, 1 NOTE
 
 1 NOTE:
-* win-builder flagged a potential spelling error in the DESCRIPTION. I verified that all words are spelled correctly.
+* win-builder flagged some potential spelling errors in the DESCRIPTION. I verified that all words are spelled correctly.
 
 
 ## Downstream dependencies

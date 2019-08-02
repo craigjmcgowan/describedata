@@ -5,8 +5,9 @@ Authors@R: person("Craig", "McGowan", email = "mcgowan.cj@gmail.com",
   role = c("aut", "cre"))
 Description:
   Helper functions for descriptive tasks such as making print-friendly bivariate 
-  tables, sample size flow counts, and more. Also contains R approximations
-  of some common, useful SAS/Stata functions.
+  tables, sample size flow counts, and visualizing sample distributions. Also 
+  contains 'R' approximations of some common 'SAS' and 'Stata' functions such 
+  as 'PROC MEANS' from 'SAS' and 'ladder', 'gladder', and 'pwcorr' from 'Stata'.
 Imports:
   dplyr (>= 0.7),
   forcats,
