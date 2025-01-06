@@ -100,13 +100,13 @@ test_that("displays kruskall p value for non-normal vars", {
 test_that("displays chisq p value for cat vars", {
   test_display_exact <- paste0(
     suppressWarnings(
-      round(chisq.test(mtcars$disp, as.factor(mtcars$carb))$p.value, 4)
+      round(chisq.test(as.factor(mtcars$gear), as.factor(mtcars$cyl))$p.value, 4)
     )
   )
 
 
   test_compare_exact <- suppressWarnings(
-    bivariate_compare(df = mtcars, compare = "carb", cat_vars = "disp") %>%
+    bivariate_compare(df = mtcars, compare = "cyl", cat_vars = "gear") %>%
       slice(1) %>%
       pull(p.value)
   )
@@ -137,13 +137,13 @@ test_that("displays chisq p value for cat vars", {
 test_that("displays fisher p value for cat vars if requested", {
   test_display_exact <- paste0(
     suppressWarnings(
-      round(fisher.test(mtcars$disp, as.factor(mtcars$gear))$p.value, 4)
+      round(fisher.test(as.factor(mtcars$carb), as.factor(mtcars$gear))$p.value, 4)
     )
   )
 
 
   test_compare_exact <- suppressWarnings(
-    bivariate_compare(df = mtcars, compare = "gear", cat_vars = "disp",
+    bivariate_compare(df = mtcars, compare = "gear", cat_vars = "carb",
                       fisher = TRUE) %>%
       slice(1) %>%
       pull(p.value)
@@ -158,7 +158,7 @@ test_that("displays fisher p value for cat vars if requested", {
       "< 0.0001",
     TRUE ~ paste0(
       suppressWarnings(
-        round(fisher.test(mtcars$vs, as.factor(mtcars$cyl))$p.value, 4)
+        round(fisher.test(as.factor(mtcars$vs), as.factor(mtcars$cyl))$p.value, 4)
       )
     )
   )
