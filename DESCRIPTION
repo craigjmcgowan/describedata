@@ -25,3 +25,5 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
 Suggests: testthat
+URL: https://github.com/craigjmcgowan/describedata
+BugReports: https://github.com/craigjmcgowan/describedata/issues

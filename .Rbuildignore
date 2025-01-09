@@ -7,3 +7,5 @@ cran-comments.md
 ^LICENSE\.md$
 ^CRAN-RELEASE$
 ^\.github$
+^cran-comments\.md$
+^revdep$
