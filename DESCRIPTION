@@ -1,6 +1,6 @@
 Package: describedata
 Title: Miscellaneous Descriptive Functions
-Version: 0.1.1
+Version: 0.1.1.9000
 Authors@R: person("Craig", "McGowan", email = "mcgowan.cj@gmail.com",
   role = c("aut", "cre"))
 Description:

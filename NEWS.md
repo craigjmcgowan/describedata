@@ -1,3 +1,5 @@
+# describedata (development version)
+
 # describedata 0.1.1
 * Edit tests for CRAN compliance
 
