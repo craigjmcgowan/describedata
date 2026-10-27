@@ -79,8 +79,7 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
 
   # Select variables requested and zap formats and labels from import
   data <- df %>%
-    when(!is.null(by) ~ select(., one_of(c(vars, by))),
-         ~ select(., one_of(vars))) %>%
+    { if (!is.null(by)) select(., one_of(c(vars, by))) else select(., one_of(vars)) } %>%
     zap_formats() %>%
     zap_labels()
 
@@ -91,11 +90,9 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
 
   # Gather variables together
   data <- data %>%
-    when(!is.null(by) ~ gather(., key = "variable", value = "value", -!!quo_by) %>%
-           group_by(.data$variable, !!quo_by),
-         ~ gather(., key = "variable", value = "value") %>%
-           group_by(.data$variable)
-         )
+    { if (!is.null(by)) gather(., key = "variable", value = "value", -!!quo_by) %>%
+           group_by(.data$variable, !!quo_by) else gather(., key = "variable", value = "value") %>%
+           group_by(.data$variable) }
 
   # Calculate p-values
   if(isTRUE(p)) {
@@ -132,31 +129,19 @@ proc_means <- function(df, vars = NULL, var_order = NULL, by = NULL, n = T,
               NMiss = sum(is.na(.data$value)),
               NObs = n()) %>%
     # Select desired statistics to return and display
-    when(!isTRUE(n) ~ select(., -N),
-         ~ select(., everything())) %>%
-    when(!isTRUE(mean) ~ select(., -Mean),
-         ~ select(., everything())) %>%
-    when(!isTRUE(sd) ~ select(., -SD),
-         ~ select(., everything())) %>%
-    when(!isTRUE(min) ~ select(., -Min),
-         ~ select(., everything())) %>%
-    when(!isTRUE(max) ~ select(., -Max),
-         ~ select(., everything())) %>%
-    when(!isTRUE(median) ~ select(., -Median),
-         ~ select(., everything())) %>%
-    when(!isTRUE(q1) ~ select(., -Q1),
-         ~ select(., everything())) %>%
-    when(!isTRUE(q3) ~ select(., -Q3),
-         ~ select(., everything())) %>%
-    when(!isTRUE(iqr) ~ select(., -IQR),
-         ~ select(., everything())) %>%
-    when(!isTRUE(nmiss) ~ select(., -NMiss),
-         ~ select(., everything())) %>%
-    when(!isTRUE(nobs) ~ select(., -NObs),
-         ~ select(., everything())) %>%
-    when(isTRUE(p) ~ left_join(., p_values, by = "variable") %>%
-           mutate(p.value = ifelse(row_number() == 1, .data$p.value, "")),
-         ~ select(., everything())) %>%
+    { if (!isTRUE(n)) select(., -N) else select(., everything()) } %>%
+    { if (!isTRUE(mean)) select(., -Mean) else select(., everything()) } %>%
+    { if (!isTRUE(sd)) select(., -SD) else select(., everything()) } %>%
+    { if (!isTRUE(min)) select(., -Min) else select(., everything()) } %>%
+    { if (!isTRUE(max)) select(., -Max) else select(., everything()) } %>%
+    { if (!isTRUE(median)) select(., -Median) else select(., everything()) } %>%
+    { if (!isTRUE(q1)) select(., -Q1) else select(., everything()) } %>%
+    { if (!isTRUE(q3)) select(., -Q3) else select(., everything()) } %>%
+    { if (!isTRUE(iqr)) select(., -IQR) else select(., everything()) } %>%
+    { if (!isTRUE(nmiss)) select(., -NMiss) else select(., everything()) } %>%
+    { if (!isTRUE(nobs)) select(., -NObs) else select(., everything()) } %>%
+    { if (isTRUE(p)) left_join(., p_values, by = "variable") %>%
+           mutate(p.value = ifelse(row_number() == 1, .data$p.value, "")) else select(., everything()) } %>%
     ungroup() %>%
     # Arrange display results
     mutate(variable = factor(.data$variable, levels = var_order)) %>%

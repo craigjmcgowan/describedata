@@ -30,17 +30,13 @@ stata_tidy <- function(mod, var_label_df = NULL) {
                                TRUE ~ paste0(round(estimate, 3), "\n(",
                                              round(std.error, 3), ")"))) %>%
     # Add variable labels if provided
-    when(
-      !is.null(var_label_df) ~ 
-        mutate(., variable = str_extract(term, 
+    { if (!is.null(var_label_df)) mutate(., variable = str_extract(term, 
                                  paste(var_label_df$variable, collapse = "|")))%>%
         left_join(var_label_df, by = "variable") %>%
         mutate(term = str_replace(term,
                                   paste(var_label_df$variable, collapse = "|"),
                                   paste0(label, ": "))) %>%
-        select(term, display),
-      ~ select(., term, display)
-    )
+        select(term, display) else select(., term, display) }
 }
 
 
